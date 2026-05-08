@@ -1,0 +1,1786 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+    color: #ffffff;
+    overflow: hidden;
+    touch-action: pan-y;
+}
+
+.container {
+    padding: 16px;
+    height: 480px;
+    width: 480px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.error-toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: rgba(0, 0, 0, 0.9);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 3000;
+    opacity: 0;
+    transition: all 0.3s ease;
+    max-width: 90%;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.error-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.now-playing-header {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    background: rgba(30, 215, 96, 0.15);
+    border: 1px solid rgba(30, 215, 96, 0.3);
+    color: #1ed760;
+    padding: 5px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 280px;
+    overflow: hidden;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    backdrop-filter: blur(10px);
+    z-index: 10;
+    flex-shrink: 0;
+}
+
+.now-playing-header.show {
+    display: flex;
+}
+
+.now-playing-header .album-mini {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.now-playing-header .now-playing-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    position: relative;
+    height: 16px;
+    line-height: 16px;
+    mask-image: linear-gradient(to right, black 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+    color: #fff;
+}
+
+.now-playing-header .now-playing-text span {
+    display: inline-block;
+    white-space: nowrap;
+    transition: opacity 0.3s ease-in-out;
+    animation: scroll-text 8s linear infinite;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.now-playing-header .now-playing-text span.no-scroll {
+    animation: none;
+}
+
+@keyframes scroll-text {
+    0%, 15% {
+        transform: translateX(0);
+    }
+    85%, 100% {
+        transform: translateX(calc(-100% + 140px));
+    }
+}
+
+.now-playing-header .playing-icon {
+    font-family: 'Material Symbols Outlined';
+    font-size: 16px;
+    animation: pulse 1.5s ease-in-out infinite;
+    flex-shrink: 0;
+    color: #1ed760;
+}
+
+.room-name {
+    font-size: 20px;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, #fff 0%, #aaa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    user-select: none;
+}
+
+.header-temp {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+}
+
+.header-temp:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.header-temp-value {
+    font-size: 15px;
+    font-weight: 400;
+    color: #fff;
+    letter-spacing: 0.3px;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-indicator {
+    display: none;
+}
+
+.status-indicator.connected {
+    display: none;
+}
+
+.status-indicator.error {
+    display: none;
+}
+
+.settings-btn {
+    display: none;
+}
+
+.pages-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+.pages-wrapper {
+    display: flex;
+    height: 100%;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    touch-action: pan-x;
+}
+
+.page {
+    min-width: 100%;
+    padding: 0 4px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    height: 100%;
+}
+
+.now-playing-header.show ~ .grid {
+    padding-top: 40px;
+}
+
+.tile {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 16px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+    text-align: left;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    touch-action: manipulation;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    min-height: 100px;
+}
+
+.tile::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.1), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.tile:active {
+    transform: scale(0.96);
+}
+
+.tile:active::before {
+    opacity: 1;
+}
+
+.tile-icon {
+    font-family: 'Material Symbols Outlined';
+    font-size: 28px;
+    font-weight: 300;
+    margin-bottom: 8px;
+    opacity: 0.8;
+}
+
+.tile-content {
+    width: 100%;
+}
+
+.tile.on .tile-icon {
+    color: #ffc107;
+}
+
+.tile.light.has-slider, .tile.cover.has-slider {
+    padding-right: 24px;
+}
+
+.tile.climate {
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.15) 0%, rgba(33, 150, 243, 0.05) 100%);
+    border-color: rgba(33, 150, 243, 0.3);
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.tile.climate.heating {
+    background: linear-gradient(135deg, rgba(255, 87, 34, 0.2) 0%, rgba(255, 87, 34, 0.1) 100%);
+    border-color: rgba(255, 87, 34, 0.4);
+    box-shadow: 0 8px 24px rgba(255, 87, 34, 0.2);
+}
+
+.tile.climate.cooling {
+    background: linear-gradient(135deg, rgba(3, 169, 244, 0.2) 0%, rgba(3, 169, 244, 0.1) 100%);
+    border-color: rgba(3, 169, 244, 0.4);
+    box-shadow: 0 8px 24px rgba(3, 169, 244, 0.2);
+}
+
+.tile.cover.on .tile-icon {
+    color: #4caf50;
+}
+
+.tile.sensor {
+    background: linear-gradient(135deg, rgba(156, 39, 176, 0.15) 0%, rgba(156, 39, 176, 0.05) 100%);
+    border-color: rgba(156, 39, 176, 0.3);
+    cursor: default;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.tile.weather {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    cursor: default;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.weather-icon {
+    font-size: 40px !important;
+    color: #03a9f4;
+    margin-bottom: 6px;
+}
+
+.weather-temp {
+    font-size: 36px;
+    font-weight: 200;
+    letter-spacing: -0.5px;
+    margin: 2px 0;
+    line-height: 1;
+}
+
+.weather-condition {
+    font-size: 10px;
+    font-weight: 400;
+    opacity: 0.6;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-top: 4px;
+}
+
+.tile.media_player {
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.15);
+    padding: 16px;
+}
+
+.tile.media_player.playing {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.media-album-art {
+    position: absolute;
+    top: -30px;
+    left: -30px;
+    right: -30px;
+    bottom: -30px;
+    background-size: cover;
+    background-position: center;
+    opacity: 0.7;
+    filter: blur(60px) saturate(1.8) brightness(0.8);
+    z-index: 0;
+    transition: opacity 0.8s ease;
+}
+
+.media-album-art.fading-out {
+    opacity: 0;
+}
+
+.media-album-art.fading-in {
+    opacity: 0;
+}
+
+.media-album-art.visible {
+    opacity: 0.7;
+}
+
+.tile.media_player::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 1;
+}
+
+.tile.media_player > * {
+    position: relative;
+    z-index: 2;
+}
+
+.media-album-thumb {
+    width: 100px;
+    height: 100px;
+    border-radius: 12px;
+    object-fit: cover;
+    margin-bottom: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8);
+    align-self: center;
+}
+
+.tile.media_player .tile-icon {
+    font-size: 48px;
+    margin-bottom: 8px;
+    opacity: 0.3;
+    color: #fff;
+}
+
+.tile.media_player .tile-content {
+    width: 100%;
+    text-align: center;
+}
+
+.tile.media_player .tile-label {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    letter-spacing: 0;
+    color: #fff;
+}
+
+.tile.media_player .tile-state {
+    font-size: 11px;
+    opacity: 0.6;
+    font-weight: 400;
+    letter-spacing: 0.3px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.media-controls {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+}
+
+.media-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.8);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 20px;
+    font-weight: 400;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-family: 'Material Symbols Outlined';
+}
+
+.media-btn.play-pause {
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    color: #000;
+    font-size: 28px;
+}
+
+.tile.media_player.playing .media-btn {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.media-btn:active {
+    transform: scale(0.92);
+}
+
+.media-btn.play-pause:active {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.media-info {
+    font-size: 10px;
+    opacity: 0.5;
+    margin-top: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 400;
+}
+
+.temp-display {
+    font-size: 32px;
+    font-weight: 200;
+    letter-spacing: -0.5px;
+    margin: 4px 0;
+    line-height: 1;
+}
+
+.temp-unit {
+    font-size: 18px;
+    font-weight: 300;
+    opacity: 0.5;
+    margin-left: 2px;
+}
+
+.temp-controls {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+    width: 100%;
+    justify-content: center;
+}
+
+.temp-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 400;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.temp-btn:active {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(0.9);
+}
+
+.climate-mode {
+    font-size: 9px;
+    font-weight: 300;
+    opacity: 0.5;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-top: 2px;
+}
+
+/* Screensaver */
+.screensaver {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+    z-index: 999;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.screensaver.active {
+    display: flex;
+}
+
+.screensaver-time {
+    font-size: 84px;
+    font-weight: 200;
+    letter-spacing: -1px;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #fff 0%, #888 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.screensaver-date {
+    font-size: 16px;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 40px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.screensaver-room {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    font-size: 20px;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 0.5px;
+}
+
+.screensaver-room-temp {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 20px;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.screensaver-weather {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.screensaver-weather-icon {
+    font-family: 'Material Symbols Outlined';
+    font-size: 72px;
+    color: #03a9f4;
+}
+
+.screensaver-weather-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.screensaver-weather-temp {
+    font-size: 48px;
+    font-weight: 200;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, #fff 0%, #888 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.screensaver-weather-condition {
+    font-size: 18px;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: capitalize;
+}
+
+.tile-label {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 2px;
+    letter-spacing: 0.2px;
+}
+
+.tile-state {
+    font-size: 10px;
+    opacity: 0.5;
+    text-transform: uppercase;
+    font-weight: 400;
+    letter-spacing: 0.8px;
+}
+
+.tile.unavailable {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.tile.assistant-command {
+    background: linear-gradient(135deg, rgba(66, 165, 245, 0.15) 0%, rgba(33, 150, 243, 0.05) 100%);
+    border-color: rgba(66, 165, 245, 0.3);
+}
+
+.tile.assistant-command .tile-icon {
+    color: #42a5f5;
+    font-size: 32px;
+}
+
+.tile.assistant-command:active {
+    background: linear-gradient(135deg, rgba(66, 165, 245, 0.25) 0%, rgba(33, 150, 243, 0.15) 100%);
+    border-color: rgba(66, 165, 245, 0.5);
+}
+
+.tile.spotify-playlist {
+    background: linear-gradient(135deg, rgba(30, 215, 96, 0.15) 0%, rgba(29, 185, 84, 0.05) 100%);
+    border-color: rgba(30, 215, 96, 0.3);
+}
+
+.tile.spotify-playlist .tile-icon {
+    color: #1ed760;
+    font-size: 32px;
+}
+
+.tile.spotify-playlist:active {
+    background: linear-gradient(135deg, rgba(30, 215, 96, 0.25) 0%, rgba(29, 185, 84, 0.15) 100%);
+    border-color: rgba(30, 215, 96, 0.5);
+}
+
+/* Brightness Progress Bar (Vertical) */
+.brightness-slider-container {
+    position: absolute;
+    bottom: 16px;
+    right: 12px;
+    width: 3px;
+    height: calc(100% - 32px);
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.brightness-progress {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: #ffc107;
+    border-radius: 2px;
+    transition: height 0.1s ease;
+    height: 0%;
+}
+
+.brightness-slider {
+    display: none;
+}
+
+.page-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 8px 0;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.dot.active {
+    width: 20px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.dot.media-page {
+    background: rgba(30, 215, 96, 0.4);
+}
+
+.dot.media-page.active {
+    background: #1ed760;
+}
+
+/* Full Media Player Page */
+.media-player-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 16px 20px;
+    background: #121212;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.media-player-page > * {
+    position: relative;
+    z-index: 2;
+}
+
+.media-player-page > .media-album-art {
+    position: absolute;
+    top: -30px;
+    left: -30px;
+    right: -30px;
+    bottom: -30px;
+    z-index: 0;
+}
+
+.media-player-page .album-art-large {
+    width: 160px;
+    height: 160px;
+    border-radius: 8px;
+    object-fit: cover;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    margin-bottom: 12px;
+    margin-top: 8px;
+}
+
+.media-player-page .track-info {
+    text-align: center;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.media-player-page .track-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: #fff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.media-player-page .track-artist {
+    font-size: 12px;
+    color: #b3b3b3;
+    font-weight: 400;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.media-player-page .media-controls {
+    gap: 16px;
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.media-player-page .media-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.media-player-page .media-btn:active {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.media-player-page .media-btn.play-pause {
+    width: 56px;
+    height: 56px;
+    font-size: 32px;
+    background: #fff;
+    color: #000;
+}
+
+.media-player-page .media-btn.play-pause:active {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.media-player-page .media-btn.secondary {
+    font-size: 22px;
+    opacity: 0.6;
+}
+
+.media-player-page .media-btn.secondary.active {
+    opacity: 1;
+    color: #1ed760;
+}
+
+.track-speaker {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 500;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.media-progress {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 2px;
+    margin-bottom: 6px;
+    overflow: hidden;
+}
+
+.media-progress-bar {
+    height: 100%;
+    background: #1ed760;
+    border-radius: 2px;
+    transition: width 0.5s linear;
+}
+
+.media-progress-times {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 400;
+    margin-bottom: 10px;
+}
+
+.media-volume {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.media-volume-icon {
+    font-family: 'Material Symbols Outlined';
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.5);
+    flex-shrink: 0;
+}
+
+.media-volume-track {
+    flex: 1;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.media-volume-bar {
+    height: 100%;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 2px;
+    transition: width 0.1s ease;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* Admin Panel */
+.admin-panel {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.admin-panel.active {
+    display: block;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.admin-title {
+    font-size: 22px;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+}
+
+.close-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.8);
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+.close-btn:active {
+    transform: scale(0.96);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 300;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #ffa726;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(255, 167, 38, 0.1);
+}
+
+.entity-list {
+    margin-top: 12px;
+}
+
+.entity-item {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 14px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.edit-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Material Symbols Outlined';
+}
+
+.edit-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.edit-btn:active {
+    transform: scale(0.96);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.reorder-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 4px;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Material Symbols Outlined';
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reorder-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.reorder-btn:active {
+    transform: scale(0.9);
+}
+
+.reorder-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.reorder-btn:disabled:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.remove-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.6);
+    padding: 14px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.remove-btn:hover {
+    background: rgba(244, 67, 54, 0.1);
+    border-color: rgba(244, 67, 54, 0.3);
+    color: #f44336;
+}
+
+.remove-btn:active {
+    transform: scale(0.96);
+    background: rgba(244, 67, 54, 0.15);
+}
+
+.add-btn, .save-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.9);
+    padding: 14px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 12px;
+    transition: all 0.2s ease;
+}
+
+.add-btn:hover, .save-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+.save-btn {
+    margin-top: 24px;
+}
+
+.add-btn:active, .save-btn:active {
+    transform: scale(0.98);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.error-message {
+    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+    color: #fff;
+    padding: 14px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    display: none;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+}
+
+.error-message.show {
+    display: block;
+}
+
+/* Climate Control Modal */
+.climate-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+}
+
+.climate-modal.active {
+    display: flex;
+}
+
+.climate-modal-content {
+    background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    width: 380px;
+    max-width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+
+.climate-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.climate-modal-title {
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.climate-modal-close {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-family: 'Material Symbols Outlined';
+    font-size: 24px;
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.2s ease;
+}
+
+.climate-modal-close:hover {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.climate-modal-body {
+    padding: 12px 16px;
+}
+
+.climate-current-temp {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.climate-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+
+.climate-temp-large {
+    font-size: 56px;
+    font-weight: 200;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, #fff 0%, #888 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.climate-target-temp {
+    margin-bottom: 32px;
+}
+
+.climate-temp-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 12px;
+}
+
+.climate-temp-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-family: 'Material Symbols Outlined';
+}
+
+.climate-temp-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.climate-temp-btn:active {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(0.94);
+}
+
+.climate-temp-display {
+    font-size: 40px;
+    font-weight: 300;
+    letter-spacing: -0.5px;
+    min-width: 120px;
+    text-align: center;
+}
+
+.climate-mode-selector {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.climate-mode-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: capitalize;
+}
+
+.climate-mode-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.climate-mode-btn.active {
+    background: linear-gradient(135deg, rgba(66, 165, 245, 0.2) 0%, rgba(33, 150, 243, 0.15) 100%);
+    border-color: rgba(66, 165, 245, 0.4);
+    color: #42a5f5;
+}
+
+.climate-mode-btn.active.heat {
+    background: linear-gradient(135deg, rgba(255, 87, 34, 0.2) 0%, rgba(255, 87, 34, 0.15) 100%);
+    border-color: rgba(255, 87, 34, 0.4);
+    color: #ff5722;
+}
+
+.climate-mode-btn.active.cool {
+    background: linear-gradient(135deg, rgba(3, 169, 244, 0.2) 0%, rgba(3, 169, 244, 0.15) 100%);
+    border-color: rgba(3, 169, 244, 0.4);
+    color: #03a9f4;
+}
+
+.climate-mode-btn:active {
+    transform: scale(0.96);
+}
+
+/* Weather Forecast Modal */
+.weather-current {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 10px;
+}
+
+.weather-current-icon {
+    font-family: 'Material Symbols Outlined';
+    font-size: 48px;
+    color: #03a9f4;
+    flex-shrink: 0;
+}
+
+.weather-current-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.weather-current-temp {
+    font-size: 32px;
+    font-weight: 200;
+    letter-spacing: -1px;
+    line-height: 1;
+}
+
+.weather-current-condition {
+    font-size: 12px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: capitalize;
+}
+
+.weather-forecast-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.weather-forecast-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.weather-forecast-time {
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+    min-width: 70px;
+}
+
+.weather-forecast-icon {
+    font-family: 'Material Symbols Outlined';
+    font-size: 20px;
+    color: #03a9f4;
+    min-width: 32px;
+    text-align: center;
+}
+
+.weather-forecast-temp {
+    font-size: 14px;
+    font-weight: 500;
+    min-width: 40px;
+    text-align: right;
+}
+
+/* Icon Picker */
+.icon-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.icon-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 80px;
+}
+
+.icon-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.icon-item:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.icon-item-icon {
+    font-family: 'Material Symbols Outlined';
+    font-size: 28px;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 6px;
+}
+
+.icon-item-name {
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+    word-break: break-word;
+    line-height: 1.3;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+
+/* Icon Picker Modal - Wider than other modals */
+#iconPickerModal .climate-modal-content {
+    width: 440px;
+    max-width: 95%;
+}
+
+
+/* Phone Button */
+.phone-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    position: relative;
+    margin-right: 8px;
+}
+
+.phone-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.phone-btn:active {
+    transform: scale(0.95);
+}
+
+.phone-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #f44336;
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+}
+
+/* Voice Message UI */
+.voice-message-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.voice-message-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.voice-message-item.unread {
+    background: rgba(66, 165, 245, 0.1);
+    border-color: rgba(66, 165, 245, 0.3);
+}
+
+.voice-message-play {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Material Symbols Outlined';
+    font-size: 20px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.voice-message-play:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.voice-message-play:active {
+    transform: scale(0.9);
+}
+
+.voice-message-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.voice-message-from {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.voice-message-time {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.voice-message-delete {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    font-family: 'Material Symbols Outlined';
+    font-size: 18px;
+    padding: 4px;
+    transition: color 0.2s ease;
+}
+
+.voice-message-delete:hover {
+    color: #f44336;
+}
+
+.voice-record-section {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 16px;
+}
+
+.voice-record-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.voice-record-btn {
+    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+    border: none;
+    color: #fff;
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.voice-record-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+}
+
+.voice-record-btn:active {
+    transform: scale(0.98);
+}
+
+.voice-record-btn.recording {
+    background: linear-gradient(135deg, #ff5252 0%, #f44336 100%);
+    animation: pulse-record 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-record {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7);
+    }
+    50% {
+        box-shadow: 0 0 0 10px rgba(244, 67, 54, 0);
+    }
+}
+
+.voice-record-timer {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 300;
+    color: #f44336;
+    margin: 8px 0;
+}
+
+
+/* Voice Room Buttons */
+.voice-room-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.voice-room-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.8);
+    padding: 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.voice-room-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.voice-room-btn:active {
+    transform: scale(0.97);
+}
+
+.voice-room-btn.selected {
+    background: rgba(66, 165, 245, 0.15);
+    border-color: rgba(66, 165, 245, 0.4);
+    color: #42a5f5;
+}
+
+.voice-room-btn.broadcast {
+    grid-column: 1 / -1;
+    background: rgba(255, 152, 0, 0.1);
+    border-color: rgba(255, 152, 0, 0.3);
+    color: #ff9800;
+}
+
+.voice-room-btn.broadcast:hover {
+    background: rgba(255, 152, 0, 0.15);
+}
+
+.voice-room-btn.broadcast.selected {
+    background: rgba(255, 152, 0, 0.2);
+    border-color: rgba(255, 152, 0, 0.5);
+}
+
+.voice-room-btn .material-symbols-outlined {
+    font-size: 24px;
+}
+
+.voice-record-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.voice-record-btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* Larger displays (tablets like Amazon Fire) */
+@media (min-width: 600px) {
+    .screensaver-time {
+        font-size: 30vh;
+    }
+    
+    .screensaver-date {
+        font-size: 20px;
+    }
+    
+    .screensaver-room {
+        font-size: 24px;
+    }
+    
+    .screensaver-room-temp {
+        font-size: 24px;
+    }
+    
+    .screensaver-weather-icon {
+        font-size: 96px;
+    }
+    
+    .screensaver-weather-temp {
+        font-size: 64px;
+    }
+    
+    .screensaver-weather-condition {
+        font-size: 22px;
+    }
+}

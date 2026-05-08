@@ -1,0 +1,4 @@
+{
+    "haUrl": "https://your-homeassistant-url.com",
+    "haToken": "your-long-lived-access-token-here"
+}

@@ -1,0 +1,79 @@
+events {
+    worker_connections 1024;
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    sendfile on;
+    keepalive_timeout 65;
+    gzip on;
+    gzip_types text/html text/css application/javascript;
+
+    # DNS resolver
+    resolver 8.8.8.8 8.8.4.4 valid=300s;
+    resolver_timeout 10s;
+
+    server {
+        listen 80;
+        listen 443 ssl;
+        server_name _;
+
+        # Self-signed SSL certificate
+        ssl_certificate /etc/nginx/ssl/cert.pem;
+        ssl_certificate_key /etc/nginx/ssl/key.pem;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers HIGH:!aNULL:!MD5;
+
+        root /usr/share/nginx/html;
+        index index.html;
+
+        location / {
+            try_files $uri $uri/ /index.html;
+            add_header Cache-Control "no-cache, no-store, must-revalidate";
+        }
+
+        # PHP API endpoint
+        location ~ ^/config-api\.php$ {
+            fastcgi_pass 127.0.0.1:9000;
+            fastcgi_index api.php;
+            include fastcgi_params;
+            fastcgi_param SCRIPT_FILENAME $document_root/api.php;
+            fastcgi_param PATH_INFO $fastcgi_path_info;
+        }
+
+        # Proxy to Home Assistant to avoid CORS issues
+        location /api/ {
+            proxy_pass ${HA_URL}/api/;
+            
+            # SSL settings for HTTPS backends
+            proxy_ssl_server_name on;
+            proxy_ssl_protocols TLSv1.2 TLSv1.3;
+            
+            # Headers
+            proxy_set_header Host $proxy_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            
+            # Pass through Authorization header
+            proxy_pass_request_headers on;
+            
+            # Disable caching for API responses
+            proxy_no_cache 1;
+            proxy_cache_bypass 1;
+            add_header Cache-Control "no-cache, no-store, must-revalidate";
+            add_header Pragma "no-cache";
+            add_header Expires "0";
+            
+            # Timeouts
+            proxy_connect_timeout 30s;
+            proxy_send_timeout 30s;
+            proxy_read_timeout 30s;
+        }
+    }
+}
