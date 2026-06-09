@@ -45,6 +45,16 @@ docker cp ./backup/. nspanel-dashboard:/data
    docker-compose up -d --build
    ```
 
+   > **Important:** The container proxies requests to Home Assistant and needs the
+   > `HA_URL` environment variable set in `docker-compose.yml`. It **must** include
+   > the scheme (`http://` or `https://`), for example:
+   > ```yaml
+   > environment:
+   >   - HA_URL=http://homeassistant.local:8123
+   > ```
+   > If `HA_URL` is missing or has no scheme, nginx fails to start with
+   > `invalid URL prefix in /etc/nginx/nginx.conf`.
+
 2. **Access the dashboard**:
    - HTTP: `http://your-server-ip:8080`
    - HTTPS: `https://your-server-ip:8443` (for voice messages)
