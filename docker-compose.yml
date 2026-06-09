@@ -9,6 +9,9 @@ services:
       - "8080:80"
       - "8443:443"
     environment:
+      # URL of your Home Assistant instance (scheme is REQUIRED, e.g. http:// or https://)
+      # Without this, nginx fails to start with "invalid URL prefix in /etc/nginx/nginx.conf"
+      - HA_URL=http://homeassistant.local:8123
       - VIRTUAL_HOST=simpledash.local
       - VIRTUAL_PORT=80
       - LETSENCRYPT_HOST=simpledash.local
