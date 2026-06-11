@@ -1982,10 +1982,17 @@ function openAdmin() {
     const panel = document.getElementById('adminPanel');
     panel.classList.add('active');
     
-    // Show room selector if we have a config, otherwise show setup
     if (config) {
+        // Already have an active room config, show room manager
         showRoomManager();
+    } else if (globalConfig && globalConfig.haToken && roomConfigs.length > 0) {
+        // Global config exists and rooms are configured, just need to pick a room
+        showRoomManager();
+    } else if (globalConfig && globalConfig.haToken) {
+        // Have credentials but no rooms yet, skip to room creation
+        showRoomEditor('new');
     } else {
+        // Truly first time, need HA URL and token
         showInitialSetup();
     }
 }
