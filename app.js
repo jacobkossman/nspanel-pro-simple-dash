@@ -2132,6 +2132,32 @@ function showGlobalSettings() {
     `;
 }
 
+let roomEditorSnapshot = null;
+
+function getRoomEditorCurrentState() {
+    return {
+        roomName: document.getElementById('roomNameInput')?.value.trim() || '',
+        headerTempEntity: document.getElementById('headerTempEntityInput')?.value.trim() || '',
+        screensaverWeather: document.getElementById('screensaverWeatherInput')?.value.trim() || '',
+        gridColumns: parseInt(document.getElementById('gridColumnsInput')?.value) || 2,
+        gridRows: parseInt(document.getElementById('gridRowsInput')?.value) || 2,
+        entities: window.editingRoomData?.entities || [],
+        assistantCommands: window.editingRoomData?.assistantCommands || [],
+        spotifyPlaylists: window.editingRoomData?.spotifyPlaylists || [],
+    };
+}
+
+function backFromRoomEditor() {
+    if (roomEditorSnapshot !== null) {
+        const current = JSON.stringify(getRoomEditorCurrentState());
+        if (current !== roomEditorSnapshot) {
+            if (!confirm('You have unsaved changes. Discard them?')) return;
+        }
+    }
+    roomEditorSnapshot = null;
+    showRoomManager();
+}
+
 function showRoomEditor(mode) {
     const isEdit = mode === 'edit';
     const roomData = isEdit && config ? config : { ...DEFAULT_ROOM_CONFIG };
@@ -2140,7 +2166,7 @@ function showRoomEditor(mode) {
     panel.innerHTML = `
         <div class="admin-header">
             <div class="admin-title">${isEdit ? 'Edit' : 'New'} Room</div>
-            <button class="close-btn" onclick="showRoomManager()">Back</button>
+            <button class="close-btn" onclick="backFromRoomEditor()">Back</button>
         </div>
 
         <div class="error-message" id="errorMessage"></div>
@@ -2333,6 +2359,16 @@ function showRoomEditor(mode) {
     // Store current editing data
     window.editingRoomData = roomData;
     editingEntityIndex = null;
+    roomEditorSnapshot = JSON.stringify({
+        roomName: roomData.roomName || '',
+        headerTempEntity: roomData.headerTempEntity || '',
+        screensaverWeather: roomData.screensaverWeather || '',
+        gridColumns: roomData.gridColumns || 2,
+        gridRows: roomData.gridRows || 2,
+        entities: roomData.entities || [],
+        assistantCommands: roomData.assistantCommands || [],
+        spotifyPlaylists: roomData.spotifyPlaylists || [],
+    });
 }
 
 async function loadSelectedRoom() {
@@ -2456,7 +2492,9 @@ async function saveRoom(mode) {
     }
 
     await saveRoomConfigs();
-    
+
+    roomEditorSnapshot = null;
+
     // Set as active room
     config = { ...globalConfig, ...roomConfig };
     await saveConfig();
@@ -3070,6 +3108,16 @@ function startPolling() {
 // ============================================
 // INITIALIZATION
 // ============================================
+
+window.addEventListener('beforeunload', (e) => {
+    if (roomEditorSnapshot === null) return;
+    const current = JSON.stringify(getRoomEditorCurrentState());
+    if (current !== roomEditorSnapshot) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
+
 async function init() {
     setupTouchHandlers();
     
