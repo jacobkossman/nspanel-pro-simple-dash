@@ -1096,7 +1096,7 @@ function createLightTile(entity, state) {
     // Add icon
     const icon = document.createElement('div');
     icon.className = 'tile-icon';
-    icon.textContent = 'lightbulb';
+    icon.textContent = entity.icon || 'lightbulb';
 
     // Add content wrapper
     const content = document.createElement('div');
