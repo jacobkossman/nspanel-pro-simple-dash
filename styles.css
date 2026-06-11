@@ -889,6 +889,10 @@ body {
     padding: 8px 0;
 }
 
+.dot:only-child {
+    display: none;
+}
+
 .dot {
     width: 6px;
     height: 6px;
