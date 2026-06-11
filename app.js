@@ -1981,9 +1981,9 @@ function setupInactivityDetection() {
 function openAdmin() {
     const panel = document.getElementById('adminPanel');
     panel.classList.add('active');
-    
-    // Show room selector if we have a config, otherwise show setup
-    if (config) {
+
+    // Show room selector if HA is already configured, initial setup only if not
+    if (config || (globalConfig && globalConfig.haToken)) {
         showRoomManager();
     } else {
         showInitialSetup();
@@ -2024,6 +2024,11 @@ function showRoomManager() {
         </div>
 
         <div class="error-message" id="errorMessage"></div>
+
+        ${!config && roomConfigs.length > 0 ? `
+        <div style="background: rgba(99, 179, 237, 0.15); border: 1px solid rgba(99, 179, 237, 0.4); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; color: rgba(255,255,255,0.85); font-size: 13px;">
+            Select a room for this panel to get started.
+        </div>` : ''}
 
         <div class="form-group">
             <label class="form-label">Select Room</label>
