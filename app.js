@@ -1428,7 +1428,8 @@ function createSensorTile(entity, state) {
     
     if (state && state.state !== 'unavailable' && state.state !== 'unknown') {
         const value = parseFloat(state.state);
-        const displayValue = isNaN(value) ? state.state : Math.round(value);
+        const decimals = entity.decimals !== undefined ? entity.decimals : 0;
+        const displayValue = isNaN(value) ? state.state : value.toFixed(decimals);
         const unit = state.attributes.unit_of_measurement || '';
 
         tempDisplay.innerHTML = `${displayValue}<span class="temp-unit">${unit}</span>`;
@@ -2203,6 +2204,15 @@ function showRoomEditor(mode) {
                     <input type="checkbox" id="newEntityHideState" style="width: 18px; height: 18px; cursor: pointer;">
                     <span style="font-size: 12px; color: #888;">Hide state text on tile</span>
                 </label>
+                <div style="display: flex; align-items: center; gap: 8px; padding: 4px 0;">
+                    <span style="font-size: 12px; color: #888;">Decimal places (sensors):</span>
+                    <select id="newEntityDecimals" class="form-input" style="width: 80px; padding: 6px 8px;">
+                        <option value="">Default (0)</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>
+                </div>
             </div>
             <button class="add-btn" id="addEntityBtn" onclick="addEntity()">+ Add Entity</button>
         </div>
@@ -2500,9 +2510,11 @@ function addEntity() {
         window.editingRoomData = { entities: [] };
     }
 
+    const decimalsRaw = document.getElementById('newEntityDecimals').value;
     const entity = { id, label };
     if (icon) entity.icon = icon;
     if (hideState) entity.hideState = true;
+    if (decimalsRaw !== '') entity.decimals = parseInt(decimalsRaw);
 
     if (editingEntityIndex !== null) {
         window.editingRoomData.entities.splice(editingEntityIndex, 0, entity);
@@ -2518,6 +2530,7 @@ function addEntity() {
     document.getElementById('selectedIconPreview').textContent = 'search';
     document.getElementById('selectedIconName').textContent = 'Choose icon';
     document.getElementById('newEntityHideState').checked = false;
+    document.getElementById('newEntityDecimals').value = '';
 
     refreshEntityList();
 }
@@ -2532,6 +2545,7 @@ function editEntity(index) {
     document.getElementById('selectedIconPreview').textContent = entity.icon || 'search';
     document.getElementById('selectedIconName').textContent = entity.icon || 'Choose icon';
     document.getElementById('newEntityHideState').checked = entity.hideState || false;
+    document.getElementById('newEntityDecimals').value = entity.decimals !== undefined ? entity.decimals : '';
 
     window.editingRoomData.entities.splice(index, 1);
     editingEntityIndex = index;
