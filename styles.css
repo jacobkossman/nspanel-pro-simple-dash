@@ -271,6 +271,29 @@ body {
 .loading-overlay.hidden {
     display: none;
 }
+
+.debug-edit-btn {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 500;
+}
+
+.debug-edit-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.9);
+}
+
 .page {
     min-width: 100%;
     padding: 0 4px;
@@ -412,6 +435,72 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.8px;
     margin-top: 4px;
+}
+
+.weather-forecast-strip {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    width: 100%;
+}
+
+.tile.weather.full-row .weather-forecast-strip {
+    margin-top: 0;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.weather-forecast-strip .weather-forecast-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 6px 4px;
+}
+
+.tile.weather.full-row .weather-forecast-item {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 4px 8px;
+}
+
+.weather-forecast-strip .weather-forecast-icon {
+    font-size: 16px;
+    color: #03a9f4;
+}
+
+.weather-forecast-strip .weather-forecast-day {
+    font-size: 9px;
+    opacity: 0.5;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.weather-forecast-strip .weather-forecast-temp {
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.tile.weather.full-row {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: left;
+    gap: 16px;
+}
+
+.tile.weather.full-row .weather-icon {
+    font-size: 48px !important;
+    margin-bottom: 0;
+    flex-shrink: 0;
+}
+
+.tile.weather.full-row .weather-temp {
+    font-size: 28px;
 }
 
 .tile.media_player {

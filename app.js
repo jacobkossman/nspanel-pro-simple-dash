@@ -59,6 +59,24 @@ let lastAlbumArtUrl = '';
 let nowPlayingFlipInterval = null;
 let nowPlayingCurrentLine = 0;
 let isSliderDragging = false;
+const forecastCache = {};
+const WEATHER_ICONS = {
+    'clear-night': 'nightlight',
+    'cloudy': 'cloud',
+    'fog': 'foggy',
+    'hail': 'weather_hail',
+    'lightning': 'thunderstorm',
+    'lightning-rainy': 'thunderstorm',
+    'partlycloudy': 'partly_cloudy_day',
+    'pouring': 'rainy_heavy',
+    'rainy': 'rainy',
+    'snowy': 'weather_snowy',
+    'snowy-rainy': 'weather_mix',
+    'sunny': 'sunny',
+    'windy': 'air',
+    'windy-variant': 'air',
+    'exceptional': 'warning'
+};
 
 async function loadConfig() {
     try {
@@ -1452,44 +1470,28 @@ function createWeatherTile(entity, state) {
     tile.className = 'tile weather';
 
     const isUnavailable = !state || state.state === 'unavailable';
-    
-    if (isUnavailable) {
-        tile.classList.add('unavailable');
+    if (isUnavailable) tile.classList.add('unavailable');
+    if (entity.weatherFullRow) tile.classList.add('full-row');
+
+    if (!entity.hideWeatherIcon) {
+        const icon = document.createElement('div');
+        icon.className = 'tile-icon weather-icon';
+        icon.textContent = WEATHER_ICONS[state?.state] || 'cloud';
+        tile.appendChild(icon);
     }
-
-    // Weather icon mapping
-    const weatherIcons = {
-        'clear-night': 'nightlight',
-        'cloudy': 'cloud',
-        'fog': 'foggy',
-        'hail': 'weather_hail',
-        'lightning': 'thunderstorm',
-        'lightning-rainy': 'thunderstorm',
-        'partlycloudy': 'partly_cloudy_day',
-        'pouring': 'rainy_heavy',
-        'rainy': 'rainy',
-        'snowy': 'weather_snowy',
-        'snowy-rainy': 'weather_mix',
-        'sunny': 'sunny',
-        'windy': 'air',
-        'windy-variant': 'air',
-        'exceptional': 'warning'
-    };
-
-    const icon = document.createElement('div');
-    icon.className = 'tile-icon weather-icon';
-    icon.textContent = weatherIcons[state?.state] || 'cloud';
 
     const content = document.createElement('div');
     content.className = 'tile-content';
 
-    const label = document.createElement('div');
-    label.className = 'tile-label';
-    label.textContent = entity.label;
+    if (!entity.hideWeatherName) {
+        const label = document.createElement('div');
+        label.className = 'tile-label';
+        label.textContent = entity.label;
+        content.appendChild(label);
+    }
 
     const tempDisplay = document.createElement('div');
     tempDisplay.className = 'weather-temp';
-    
     if (state && state.attributes.temperature !== undefined) {
         const temp = Math.round(state.attributes.temperature);
         const unit = state.attributes.temperature_unit || '°C';
@@ -1502,15 +1504,20 @@ function createWeatherTile(entity, state) {
     condition.className = 'weather-condition';
     condition.textContent = state?.state ? state.state.replace('-', ' ').toUpperCase() : 'UNKNOWN';
 
-    content.appendChild(label);
     content.appendChild(tempDisplay);
     content.appendChild(condition);
-
-    tile.appendChild(icon);
     tile.appendChild(content);
 
-    // Open forecast modal on click
-    if (!isUnavailable) {
+    if (entity.showInlineForecast) {
+        tile.dataset.entityId = entity.id;
+        if (forecastCache[entity.id]?.length > 0) {
+            renderInlineForecastStrip(tile, forecastCache[entity.id]);
+        } else {
+            fetchInlineForecast(entity.id);
+        }
+    }
+
+    if (!isUnavailable && !entity.hideWeatherForecast) {
         tile.onclick = () => openWeatherForecast(entity.id);
         tile.style.cursor = 'pointer';
     } else {
@@ -1932,25 +1939,7 @@ function updateScreensaverClock() {
     if (config.screensaverWeather && entityStates[config.screensaverWeather]) {
         const weatherState = entityStates[config.screensaverWeather];
         
-        const weatherIcons = {
-            'clear-night': 'nightlight',
-            'cloudy': 'cloud',
-            'fog': 'foggy',
-            'hail': 'weather_hail',
-            'lightning': 'thunderstorm',
-            'lightning-rainy': 'thunderstorm',
-            'partlycloudy': 'partly_cloudy_day',
-            'pouring': 'rainy_heavy',
-            'rainy': 'rainy',
-            'snowy': 'weather_snowy',
-            'snowy-rainy': 'weather_mix',
-            'sunny': 'sunny',
-            'windy': 'air',
-            'windy-variant': 'air',
-            'exceptional': 'warning'
-        };
-        
-        weatherIcon.textContent = weatherIcons[weatherState.state] || 'cloud';
+        weatherIcon.textContent = WEATHER_ICONS[weatherState.state] || 'cloud';
         
         // Show weather temperature
         if (weatherState.attributes.temperature !== undefined) {
@@ -2601,8 +2590,10 @@ let editingEntityIndex = null;
 
 function updateEntityFormForDomain() {
     const domain = document.getElementById('newEntityDomain').value;
+    document.getElementById('entityOptHideState').style.display = domain === 'weather' ? 'none' : 'block';
     document.getElementById('entityOptLight').style.display = domain === 'light' ? 'block' : 'none';
     document.getElementById('entityOptSensor').style.display = domain === 'sensor' ? 'flex' : 'none';
+    document.getElementById('entityOptWeather').style.display = domain === 'weather' ? 'flex' : 'none';
 }
 
 function openEntityModal(index) {
@@ -2624,6 +2615,11 @@ function openEntityModal(index) {
         document.getElementById('newEntityHideState').checked = entity.hideState || false;
         document.getElementById('newEntityDisableDimming').checked = entity.disableDimming || false;
         document.getElementById('newEntityDecimals').value = entity.decimals !== undefined ? entity.decimals : '';
+        document.getElementById('newEntityHideWeatherName').checked = entity.hideWeatherName || false;
+        document.getElementById('newEntityHideWeatherIcon').checked = entity.hideWeatherIcon || false;
+        document.getElementById('newEntityHideWeatherForecast').checked = entity.hideWeatherForecast || false;
+        document.getElementById('newEntityWeatherFullRow').checked = entity.weatherFullRow || false;
+        document.getElementById('newEntityShowInlineForecast').checked = entity.showInlineForecast || false;
     } else {
         document.getElementById('newEntityDomain').value = 'light';
         document.getElementById('newEntityId').value = '';
@@ -2634,6 +2630,11 @@ function openEntityModal(index) {
         document.getElementById('newEntityHideState').checked = false;
         document.getElementById('newEntityDisableDimming').checked = false;
         document.getElementById('newEntityDecimals').value = '';
+        document.getElementById('newEntityHideWeatherName').checked = false;
+        document.getElementById('newEntityHideWeatherIcon').checked = false;
+        document.getElementById('newEntityHideWeatherForecast').checked = false;
+        document.getElementById('newEntityWeatherFullRow').checked = false;
+        document.getElementById('newEntityShowInlineForecast').checked = false;
     }
 
     updateEntityFormForDomain();
@@ -2672,6 +2673,13 @@ function saveEntityModal() {
     if (domain === 'sensor') {
         const decimalsRaw = document.getElementById('newEntityDecimals').value;
         if (decimalsRaw !== '') entity.decimals = parseInt(decimalsRaw);
+    }
+    if (domain === 'weather') {
+        if (document.getElementById('newEntityHideWeatherName').checked) entity.hideWeatherName = true;
+        if (document.getElementById('newEntityHideWeatherIcon').checked) entity.hideWeatherIcon = true;
+        if (document.getElementById('newEntityHideWeatherForecast').checked) entity.hideWeatherForecast = true;
+        if (document.getElementById('newEntityWeatherFullRow').checked) entity.weatherFullRow = true;
+        if (document.getElementById('newEntityShowInlineForecast').checked) entity.showInlineForecast = true;
     }
 
     if (editingEntityIndex !== null) {
@@ -3037,31 +3045,56 @@ async function setClimateMode(entityId, mode) {
 // ============================================
 // WEATHER FORECAST MODAL
 // ============================================
+function renderInlineForecastStrip(tile, forecast) {
+    const existing = tile.querySelector('.weather-forecast-strip');
+    if (existing) existing.remove();
+    const strip = document.createElement('div');
+    strip.className = 'weather-forecast-strip';
+    forecast.slice(0, 4).forEach(day => {
+        const dt = new Date(day.datetime);
+        const dayName = dt.toLocaleDateString('en', { weekday: 'short' });
+        const icon = WEATHER_ICONS[day.condition] || 'cloud';
+        const temp = day.temperature !== undefined ? `${Math.round(day.temperature)}°` : '—';
+        const item = document.createElement('div');
+        item.className = 'weather-forecast-item';
+        item.innerHTML = `
+            <span class="material-symbols-outlined weather-forecast-icon">${icon}</span>
+            <span class="weather-forecast-day">${dayName}</span>
+            <span class="weather-forecast-temp">${temp}</span>
+        `;
+        strip.appendChild(item);
+    });
+    tile.appendChild(strip);
+}
+
+async function fetchInlineForecast(entityId) {
+    try {
+        const response = await callHA('services/weather/get_forecasts?return_response=true', 'POST', {
+            entity_id: entityId,
+            type: 'daily'
+        });
+        let data = [];
+        if (response.service_response?.[entityId]?.forecast) data = response.service_response[entityId].forecast;
+        else if (response[entityId]?.forecast) data = response[entityId].forecast;
+        else if (response.forecast) data = response.forecast;
+        else if (Array.isArray(response)) data = response;
+
+        if (data.length > 0) {
+            forecastCache[entityId] = data;
+            const liveTile = document.querySelector(`[data-entity-id="${entityId}"]`);
+            if (liveTile) renderInlineForecastStrip(liveTile, data);
+        }
+    } catch (e) {
+        // Forecast unavailable — strip stays hidden
+    }
+}
+
 async function openWeatherForecast(entityId) {
     const state = entityStates[entityId];
     if (!state) return;
     
     const modal = document.getElementById('weatherModal');
     const entity = config.entities.find(e => e.id === entityId);
-    
-    // Weather icon mapping
-    const weatherIcons = {
-        'clear-night': 'nightlight',
-        'cloudy': 'cloud',
-        'fog': 'foggy',
-        'hail': 'weather_hail',
-        'lightning': 'thunderstorm',
-        'lightning-rainy': 'thunderstorm',
-        'partlycloudy': 'partly_cloudy_day',
-        'pouring': 'rainy_heavy',
-        'rainy': 'rainy',
-        'snowy': 'weather_snowy',
-        'snowy-rainy': 'weather_mix',
-        'sunny': 'sunny',
-        'windy': 'air',
-        'windy-variant': 'air',
-        'exceptional': 'warning'
-    };
     
     // Update modal title
     document.getElementById('weatherModalTitle').textContent = entity ? entity.label : 'Weather';
@@ -3071,7 +3104,7 @@ async function openWeatherForecast(entityId) {
     const temp = state.attributes.temperature;
     const unit = state.attributes.temperature_unit || '°C';
     const condition = state.state.replace('-', ' ');
-    const icon = weatherIcons[state.state] || 'cloud';
+    const icon = WEATHER_ICONS[state.state] || 'cloud';
     
     currentWeather.innerHTML = `
         <div class="weather-current-icon">${icon}</div>
@@ -3147,7 +3180,7 @@ async function openWeatherForecast(entityId) {
                     timeStr = `${days[date.getDay()]} ${date.getHours()}:00`;
                 }
                 
-                const forecastIcon = weatherIcons[item.condition] || 'cloud';
+                const forecastIcon = WEATHER_ICONS[item.condition] || 'cloud';
                 const forecastTemp = Math.round(item.temperature);
                 
                 forecastItem.innerHTML = `
