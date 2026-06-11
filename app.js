@@ -2025,6 +2025,9 @@ function showInitialSetup() {
 
 function showRoomManager() {
     const panel = document.getElementById('adminPanel');
+    const hasRooms = roomConfigs.length > 0;
+    const activeIdx = config ? roomConfigs.findIndex(r => r.roomName === config.roomName) : -1;
+
     panel.innerHTML = `
         <div class="admin-header">
             <div class="admin-title">Room Configuration</div>
@@ -2033,29 +2036,45 @@ function showRoomManager() {
 
         <div class="error-message" id="errorMessage"></div>
 
-        ${!config && roomConfigs.length > 0 ? `
+        ${!config && hasRooms ? `
         <div style="background: rgba(99, 179, 237, 0.15); border: 1px solid rgba(99, 179, 237, 0.4); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; color: rgba(255,255,255,0.85); font-size: 13px;">
             Select a room for this panel to get started.
         </div>` : ''}
 
         <div class="form-group">
-            <label class="form-label">Select Room</label>
-            <select class="form-input" id="roomSelect" onchange="loadSelectedRoom()">
+            <label class="form-label">Room</label>
+            <select class="form-input" id="roomSelect" onchange="updateRoomManagerButtons()">
                 <option value="">-- Select a room --</option>
-                ${roomConfigs.map((room, idx) => `<option value="${idx}" ${config && config.roomName === room.roomName ? 'selected' : ''}>${room.roomName}</option>`).join('')}
+                ${roomConfigs.map((room, idx) => `<option value="${idx}" ${idx === activeIdx ? 'selected' : ''}>${room.roomName}${idx === activeIdx ? ' (active)' : ''}</option>`).join('')}
             </select>
         </div>
 
-        <div style="display: flex; gap: 8px; margin-bottom: 24px;">
-            <button class="add-btn" style="flex: 1; margin-top: 0;" onclick="showRoomEditor('new')">+ New Room</button>
-            <button class="add-btn" style="flex: 1; margin-top: 0;" onclick="showRoomEditor('edit')" id="editRoomBtn" ${!config ? 'disabled' : ''}>Edit Current</button>
-            <button class="remove-btn" style="flex: 1;" onclick="deleteCurrentRoom()" id="deleteRoomBtn" ${!config ? 'disabled' : ''}>Delete</button>
+        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+            <button class="add-btn" style="flex: 1; margin-top: 0;" id="loadRoomBtn" onclick="loadSelectedRoom()" ${!hasRooms ? 'disabled' : ''}>Set Active</button>
+            <button class="add-btn" style="flex: 1; margin-top: 0;" id="editRoomBtn" onclick="editSelectedRoom()" ${!hasRooms ? 'disabled' : ''}>Edit</button>
+            <button class="remove-btn" style="flex: 1;" id="deleteRoomBtn" onclick="deleteSelectedRoom()" ${!hasRooms ? 'disabled' : ''}>Delete</button>
         </div>
 
-        <div style="border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 20px; margin-top: 20px;">
+        <button class="add-btn" style="width: 100%; margin-bottom: 24px;" onclick="showRoomEditor('new')">+ New Room</button>
+
+        <div style="border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 20px; margin-top: 4px;">
             <button class="save-btn" style="background: linear-gradient(135deg, #666 0%, #444 100%);" onclick="showGlobalSettings()">Global Settings</button>
         </div>
     `;
+}
+
+function updateRoomManagerButtons() {
+    const idx = parseInt(document.getElementById('roomSelect').value);
+    const hasSelection = !isNaN(idx) && idx >= 0;
+    document.getElementById('loadRoomBtn').disabled = !hasSelection;
+    document.getElementById('editRoomBtn').disabled = !hasSelection;
+    document.getElementById('deleteRoomBtn').disabled = !hasSelection;
+}
+
+function editSelectedRoom() {
+    const idx = parseInt(document.getElementById('roomSelect').value);
+    if (isNaN(idx) || !roomConfigs[idx]) return;
+    showRoomEditor('edit', idx);
 }
 
 function showGlobalSettings() {
@@ -2181,9 +2200,12 @@ function backFromRoomEditor() {
     showRoomManager();
 }
 
-function showRoomEditor(mode) {
+function showRoomEditor(mode, roomIdx) {
     const isEdit = mode === 'edit';
-    const roomData = isEdit && config ? config : { ...DEFAULT_ROOM_CONFIG };
+    window.editingRoomIdx = isEdit && roomIdx !== undefined ? roomIdx : null;
+    const roomData = isEdit && roomIdx !== undefined && roomConfigs[roomIdx]
+        ? roomConfigs[roomIdx]
+        : (isEdit && config ? config : { ...DEFAULT_ROOM_CONFIG });
     
     const panel = document.getElementById('adminPanel');
     panel.innerHTML = `
@@ -2486,8 +2508,10 @@ async function saveRoom(mode) {
         }
         roomConfigs.push(roomConfig);
     } else {
-        // Update existing room
-        const idx = roomConfigs.findIndex(r => r.roomName === config.roomName);
+        // Update existing room by index, fall back to name match
+        const idx = window.editingRoomIdx !== null && window.editingRoomIdx !== undefined
+            ? window.editingRoomIdx
+            : roomConfigs.findIndex(r => r.roomName === (config ? config.roomName : roomName));
         if (idx >= 0) {
             roomConfigs[idx] = roomConfig;
         }
@@ -2510,21 +2534,22 @@ async function saveRoom(mode) {
     }
 }
 
-async function deleteCurrentRoom() {
-    if (!config || !confirm(`Delete room "${config.roomName}"?`)) return;
-    
+async function deleteSelectedRoom() {
+    const idx = parseInt(document.getElementById('roomSelect').value);
+    if (isNaN(idx) || !roomConfigs[idx]) return;
+    const room = roomConfigs[idx];
+    if (!confirm(`Delete room "${room.roomName}"?`)) return;
+
     try {
-        // Delete from server
-        await fetch(`/config-api.php?path=room&name=${encodeURIComponent(config.roomName)}`, {
+        await fetch(`/config-api.php?path=room&name=${encodeURIComponent(room.roomName)}`, {
             method: 'DELETE'
         });
-        
-        // Reload room configs
+
         roomConfigs = await loadRoomConfigs();
-        
-        // Clear active room
-        config = null;
-        
+
+        // Clear active room if it was the deleted one
+        if (config && config.roomName === room.roomName) config = null;
+
         showRoomManager();
     } catch (error) {
         console.error('Failed to delete room:', error);
