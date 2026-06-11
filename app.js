@@ -2068,84 +2068,87 @@ function showGlobalSettings() {
 
         <div class="error-message" id="errorMessage"></div>
 
-        <div class="form-group">
-            <label class="form-label">Device Model</label>
-            <select class="form-input" id="deviceModelInput">
-                <option value="pro" ${(globalConfig.deviceModel || 'pro') === 'pro' ? 'selected' : ''}>NSPanel Pro (480×480)</option>
-                <option value="pro120" ${globalConfig.deviceModel === 'pro120' ? 'selected' : ''}>NSPanel Pro 120 (480×890)</option>
-            </select>
+        <div class="settings-section">
+            <div class="settings-section-title">Home Assistant</div>
+            <div class="form-group">
+                <label class="form-label">URL</label>
+                <input type="text" class="form-input" id="haUrlInput" placeholder="http://homeassistant.local:8123" value="${globalConfig.haUrl}">
+                <small style="color: #888; font-size: 12px;">Include http:// or https://</small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Long-Lived Access Token</label>
+                <input type="password" class="form-input" id="haTokenInput" placeholder="Your HA token" value="${globalConfig.haToken}">
+                <small style="color: #888; font-size: 12px;">Create in HA: Profile → Security → Long-Lived Access Tokens</small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Google Assistant Entity (Optional)</label>
+                <input type="text" class="form-input" id="assistantEntityInput" placeholder="conversation.google_assistant" value="${globalConfig.assistantEntity || ''}">
+                <small style="color: #888; font-size: 12px;">For voice command tiles. Use conversation agent ID from HA.</small>
+            </div>
         </div>
 
-        <div class="form-group">
-            <label class="form-label">Home Assistant URL</label>
-            <input type="text" class="form-input" id="haUrlInput" placeholder="http://homeassistant.local:8123" value="${globalConfig.haUrl}">
-            <small style="color: #888; font-size: 12px;">Include http:// or https://</small>
+        <div class="settings-section">
+            <div class="settings-section-title">Device</div>
+            <div class="form-group">
+                <label class="form-label">Model</label>
+                <select class="form-input" id="deviceModelInput">
+                    <option value="pro" ${(globalConfig.deviceModel || 'pro') === 'pro' ? 'selected' : ''}>NSPanel Pro (480×480)</option>
+                    <option value="pro120" ${globalConfig.deviceModel === 'pro120' ? 'selected' : ''}>NSPanel Pro 120 (480×890)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Font Family</label>
+                <select class="form-input" id="fontFamilyInput">
+                    ${Object.keys(FONT_OPTIONS).map(name =>
+                        `<option value="${name}" ${(globalConfig.fontFamily || 'Inter') === name ? 'selected' : ''}>${name}</option>`
+                    ).join('')}
+                </select>
+            </div>
         </div>
 
-        <div class="form-group">
-            <label class="form-label">Long-Lived Access Token</label>
-            <input type="password" class="form-input" id="haTokenInput" placeholder="Your HA token" value="${globalConfig.haToken}">
-            <small style="color: #888; font-size: 12px;">Create in HA: Profile → Security → Long-Lived Access Tokens</small>
+        <div class="settings-section">
+            <div class="settings-section-title">Screensaver</div>
+            <div class="form-group">
+                <label class="form-label">Timeout (seconds)</label>
+                <input type="number" class="form-input" id="screensaverTimeoutInput" placeholder="10" min="5" max="300" value="${globalConfig.screensaverTimeout || 10}">
+                <small style="color: #888; font-size: 12px;">Time of inactivity before screensaver activates (5–300 seconds)</small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Temperature Entity (Optional)</label>
+                <input type="text" class="form-input" id="screensaverTempEntityInput" placeholder="sensor.outdoor_temperature" value="${globalConfig.screensaverTempEntity || ''}">
+                <small style="color: #888; font-size: 12px;">Sensor shown on screensaver</small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Weather Entity (Optional)</label>
+                <input type="text" class="form-input" id="screensaverWeatherEntityInput" placeholder="weather.home" value="${globalConfig.screensaverWeather || ''}">
+                <small style="color: #888; font-size: 12px;">Weather entity shown on screensaver</small>
+            </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="disableScreensaverInput" ${globalConfig.disableBuiltInScreensaver ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer;">
+                    <span class="form-label" style="margin: 0;">Disable Built-in Screensaver</span>
+                </label>
+                <small style="color: #888; font-size: 12px; display: block; margin-top: 4px;">
+                    Use if you prefer Fully Kiosk's screensaver instead.<br>
+                    <strong>Standalone URL:</strong> <code style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">${window.location.origin}/?screensaver=true</code>
+                </small>
+            </div>
         </div>
 
-        <div class="form-group">
-            <label class="form-label">Google Assistant Entity (Optional)</label>
-            <input type="text" class="form-input" id="assistantEntityInput" placeholder="conversation.google_assistant" value="${globalConfig.assistantEntity || ''}">
-            <small style="color: #888; font-size: 12px;">For voice command tiles. Use conversation agent ID from HA.</small>
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">Screensaver Timeout (seconds)</label>
-            <input type="number" class="form-input" id="screensaverTimeoutInput" placeholder="10" min="5" max="300" value="${globalConfig.screensaverTimeout || 10}">
-            <small style="color: #888; font-size: 12px;">Time of inactivity before screensaver activates (5-300 seconds)</small>
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">Screensaver Temperature Entity (Optional)</label>
-            <input type="text" class="form-input" id="screensaverTempEntityInput" placeholder="sensor.outdoor_temperature" value="${globalConfig.screensaverTempEntity || ''}">
-            <small style="color: #888; font-size: 12px;">Temperature sensor to show on screensaver (for standalone screensaver mode)</small>
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">Screensaver Weather Entity (Optional)</label>
-            <input type="text" class="form-input" id="screensaverWeatherEntityInput" placeholder="weather.home" value="${globalConfig.screensaverWeather || ''}">
-            <small style="color: #888; font-size: 12px;">Weather entity to show on screensaver (for standalone screensaver mode)</small>
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">Font Family</label>
-            <select class="form-input" id="fontFamilyInput">
-                ${Object.keys(FONT_OPTIONS).map(name =>
-                    `<option value="${name}" ${(globalConfig.fontFamily || 'Inter') === name ? 'selected' : ''}>${name}</option>`
-                ).join('')}
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                <input type="checkbox" id="hideVoiceMessagesInput" ${globalConfig.hideVoiceMessages ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer;">
-                <span class="form-label" style="margin: 0;">Hide Voice Messages</span>
-            </label>
-            <small style="color: #888; font-size: 12px; display: block; margin-top: 4px;">Hides the phone button from the header</small>
-        </div>
-
-        <div class="form-group">
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                <input type="checkbox" id="disableScreensaverInput" ${globalConfig.disableBuiltInScreensaver ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer;">
-                <span class="form-label" style="margin: 0;">Disable Built-in Screensaver</span>
-            </label>
-            <small style="color: #888; font-size: 12px; display: block; margin-top: 4px;">
-                Use this if you're using Fully Kiosk's screensaver feature instead.<br>
-                <strong>Standalone Screensaver URL:</strong> <code style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">${window.location.origin}/?screensaver=true</code>
-            </small>
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">Test Sound</label>
-            <button class="add-btn" style="margin-top: 0;" onclick="testSound()">Play Test Sound</button>
-            <small style="color: #888; font-size: 12px; display: block; margin-top: 4px;">
-                Place a sound.mp3 file in the root directory to test audio playback on the panel
-            </small>
+        <div class="settings-section">
+            <div class="settings-section-title">Features</div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="hideVoiceMessagesInput" ${globalConfig.hideVoiceMessages ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer;">
+                    <span class="form-label" style="margin: 0;">Hide Voice Messages</span>
+                </label>
+                <small style="color: #888; font-size: 12px; display: block; margin-top: 4px;">Hides the phone button from the header</small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Test Sound</label>
+                <button class="add-btn" style="margin-top: 0;" onclick="testSound()">Play Test Sound</button>
+                <small style="color: #888; font-size: 12px; display: block; margin-top: 4px;">Place a sound.mp3 in the root directory to test audio playback</small>
+            </div>
         </div>
 
         <button class="save-btn" onclick="saveGlobalSettings()">Save Global Settings</button>
