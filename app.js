@@ -2024,6 +2024,7 @@ function showInitialSetup() {
 }
 
 function showRoomManager() {
+    setAdminParam('rooms');
     const panel = document.getElementById('adminPanel');
     const hasRooms = roomConfigs.length > 0;
     const activeIdx = config ? roomConfigs.findIndex(r => r.roomName === config.roomName) : -1;
@@ -2078,6 +2079,7 @@ function editSelectedRoom() {
 }
 
 function showGlobalSettings() {
+    setAdminParam('settings');
     const panel = document.getElementById('adminPanel');
     panel.innerHTML = `
         <div class="admin-header">
@@ -2201,6 +2203,8 @@ function backFromRoomEditor() {
 }
 
 function showRoomEditor(mode, roomIdx) {
+    const roomName = roomIdx !== undefined && roomConfigs[roomIdx] ? roomConfigs[roomIdx].roomName : undefined;
+    setAdminParam('editor', { mode, room: roomName });
     const isEdit = mode === 'edit';
     window.editingRoomIdx = isEdit && roomIdx !== undefined ? roomIdx : null;
     const roomData = isEdit && roomIdx !== undefined && roomConfigs[roomIdx]
@@ -2557,8 +2561,26 @@ async function deleteSelectedRoom() {
     }
 }
 
+function setAdminParam(view, extra = {}) {
+    const params = new URLSearchParams(window.location.search);
+    params.set('admin', view);
+    Object.entries(extra).forEach(([k, v]) => { if (v !== undefined) params.set(k, v); });
+    ['mode', 'room'].forEach(k => { if (!(k in extra) || extra[k] === undefined) params.delete(k); });
+    history.replaceState(null, '', '?' + params.toString());
+}
+
+function clearAdminParam() {
+    const params = new URLSearchParams(window.location.search);
+    params.delete('admin');
+    params.delete('mode');
+    params.delete('room');
+    const qs = params.toString();
+    history.replaceState(null, '', qs ? '?' + qs : window.location.pathname);
+}
+
 function closeAdmin() {
     document.getElementById('adminPanel').classList.remove('active');
+    clearAdminParam();
 }
 
 let editingEntityIndex = null;
@@ -3225,6 +3247,37 @@ async function init() {
     applyFontFamily();
     applyDeviceModel();
     applyVoiceMessageVisibility();
+
+    // Override active room from URL param (enables shareable room URLs)
+    const adminView = urlParams.get('admin');
+    const roomParam = urlParams.get('room');
+    if (roomParam && !adminView) {
+        const idx = roomConfigs.findIndex(r => r.roomName === roomParam);
+        if (idx >= 0) config = { ...globalConfig, ...roomConfigs[idx] };
+    }
+
+    // Restore admin view from URL params on reload
+    if (adminView && (config || globalConfig.haToken)) {
+        document.getElementById('adminPanel').classList.add('active');
+        if (adminView === 'settings') {
+            showGlobalSettings();
+        } else if (adminView === 'editor') {
+            const editorMode = urlParams.get('mode') || 'edit';
+            const editorRoomParam = urlParams.get('room');
+            const editorRoomIdx = editorRoomParam ? roomConfigs.findIndex(r => r.roomName === editorRoomParam) : -1;
+            showRoomEditor(editorMode, editorRoomIdx >= 0 ? editorRoomIdx : undefined);
+        } else {
+            showRoomManager();
+        }
+        return;
+    }
+
+    // Set frontend room param so reload returns to the same room
+    if (config) {
+        const params = new URLSearchParams(window.location.search);
+        params.set('room', config.roomName);
+        history.replaceState(null, '', '?' + params.toString());
+    }
 
     // Normal mode - setup inactivity screensaver only if not disabled
     if (!globalConfig.disableBuiltInScreensaver) {
