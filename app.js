@@ -2204,6 +2204,8 @@ function showRoomEditor(mode) {
                         <option value="2" ${(roomData.gridRows || 2) === 2 ? 'selected' : ''}>2</option>
                         <option value="3" ${(roomData.gridRows || 2) === 3 ? 'selected' : ''}>3</option>
                         <option value="4" ${(roomData.gridRows || 2) === 4 ? 'selected' : ''}>4</option>
+                        <option value="5" ${(roomData.gridRows || 2) === 5 ? 'selected' : ''}>5</option>
+                        <option value="6" ${(roomData.gridRows || 2) === 6 ? 'selected' : ''}>6</option>
                     </select>
                 </div>
             </div>
