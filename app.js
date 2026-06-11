@@ -239,6 +239,7 @@ async function callService(domain, service, entityId) {
 // UI RENDERING
 // ============================================
 function renderPages() {
+    document.getElementById('loadingOverlay').classList.add('hidden');
     const wrapper = document.getElementById('pagesWrapper');
     const dotsContainer = document.getElementById('pageDots');
     wrapper.innerHTML = '';
@@ -2125,6 +2126,14 @@ function showGlobalSettings() {
                     ).join('')}
                 </select>
             </div>
+            <div class="form-group">
+                <label class="form-label">Header</label>
+                <select class="form-input" id="headerDisplayInput">
+                    <option value="full" ${!globalConfig.hideRoomName && !globalConfig.hideHeader ? 'selected' : ''}>Full</option>
+                    <option value="no-name" ${globalConfig.hideRoomName && !globalConfig.hideHeader ? 'selected' : ''}>Hide room name</option>
+                    <option value="hidden" ${globalConfig.hideHeader ? 'selected' : ''}>Hidden</option>
+                </select>
+            </div>
         </div>
 
         <div class="settings-section">
@@ -2438,6 +2447,9 @@ async function saveGlobalSettings() {
     globalConfig.deviceModel = document.getElementById('deviceModelInput').value;
     globalConfig.hideVoiceMessages = document.getElementById('hideVoiceMessagesInput').checked;
     globalConfig.disableBuiltInScreensaver = document.getElementById('disableScreensaverInput').checked;
+    const headerDisplay = document.getElementById('headerDisplayInput').value;
+    globalConfig.hideRoomName = headerDisplay === 'no-name';
+    globalConfig.hideHeader = headerDisplay === 'hidden';
     globalConfig.screensaverTimeout = parseInt(document.getElementById('screensaverTimeoutInput').value) || 10;
     globalConfig.screensaverTempEntity = document.getElementById('screensaverTempEntityInput').value.trim();
     globalConfig.screensaverWeather = document.getElementById('screensaverWeatherEntityInput').value.trim();
@@ -2465,6 +2477,7 @@ async function saveGlobalSettings() {
     applyFontFamily();
     applyDeviceModel();
     applyVoiceMessageVisibility();
+    applyHeaderVisibility();
 
     // Test connection
     const states = await getStates();
@@ -3247,6 +3260,7 @@ async function init() {
     applyFontFamily();
     applyDeviceModel();
     applyVoiceMessageVisibility();
+    applyHeaderVisibility();
 
     // Override active room from URL param (enables shareable room URLs)
     const adminView = urlParams.get('admin');
@@ -3473,6 +3487,19 @@ function applyDeviceModel() {
 function applyVoiceMessageVisibility() {
     document.getElementById('phoneBtn').style.display =
         globalConfig.hideVoiceMessages ? 'none' : '';
+}
+
+function applyHeaderVisibility() {
+    const header = document.querySelector('.header');
+    const roomName = document.getElementById('roomName');
+    if (!header) return;
+    if (globalConfig.hideHeader) {
+        header.style.display = 'none';
+    } else {
+        header.style.display = '';
+        // opacity:0 keeps the tap target alive so openAdmin() still works
+        if (roomName) roomName.style.opacity = globalConfig.hideRoomName ? '0' : '';
+    }
 }
 
 function updatePhoneBadge() {
