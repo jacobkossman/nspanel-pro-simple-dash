@@ -859,7 +859,7 @@ function createTile(entity, state) {
     }
 
     const stateValue = state ? state.state : null;
-    const isOn = stateValue === 'on' || stateValue === 'playing';
+    const isOn = stateValue === 'on' || stateValue === 'playing' || stateValue === 'unlocked';
     const isUnavailable = !state || stateValue === 'unavailable';
 
     if (isOn) {
@@ -1708,6 +1708,9 @@ function handleTileClick(entityId, domain) {
             break;
         case 'cover':
             service = 'toggle';
+            break;
+        case 'lock':
+            service = entityStates[entityId]?.state === 'locked' ? 'unlock' : 'lock';
             break;
         case 'group':
             // Groups use homeassistant domain for toggle
