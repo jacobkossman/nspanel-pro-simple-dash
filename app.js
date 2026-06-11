@@ -3394,25 +3394,34 @@ const COMMON_ICONS = [
 
 function openIconPicker() {
     const modal = document.getElementById('iconPickerModal');
-    const grid = document.getElementById('iconGrid');
     const searchInput = document.getElementById('iconSearchInput');
-    
-    // Render all icons
+    const customInput = document.getElementById('iconCustomInput');
+    const customPreview = document.getElementById('iconCustomPreview');
+
     renderIconGrid(COMMON_ICONS);
-    
-    // Setup search
+
     searchInput.value = '';
     searchInput.oninput = (e) => {
         const query = e.target.value.toLowerCase();
-        if (query) {
-            const filtered = COMMON_ICONS.filter(icon => icon.includes(query));
-            renderIconGrid(filtered);
-        } else {
-            renderIconGrid(COMMON_ICONS);
-        }
+        renderIconGrid(query ? COMMON_ICONS.filter(icon => icon.includes(query)) : COMMON_ICONS);
     };
-    
+
+    customInput.value = '';
+    customPreview.textContent = '';
+    customInput.oninput = (e) => {
+        customPreview.textContent = e.target.value.trim();
+    };
+    customInput.onkeydown = (e) => {
+        if (e.key === 'Enter') selectCustomIcon();
+    };
+
     modal.classList.add('active');
+    setTimeout(() => searchInput.focus(), 50);
+}
+
+function selectCustomIcon() {
+    const name = document.getElementById('iconCustomInput').value.trim();
+    if (name) selectIcon(name);
 }
 
 function renderIconGrid(icons) {

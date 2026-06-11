@@ -117,7 +117,15 @@
                 <button class="climate-modal-close" onclick="closeIconPicker()">close</button>
             </div>
             <div class="climate-modal-body">
-                <input type="text" class="form-input" id="iconSearchInput" placeholder="Search icons..." style="margin-bottom: 12px;">
+                <input type="text" class="form-input" id="iconSearchInput" placeholder="Search icons..." aria-label="Search icons" style="margin-bottom: 8px;">
+                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+                    <input type="text" class="form-input" id="iconCustomInput" placeholder="Or type any icon name..." aria-label="Custom icon name" style="flex: 1;">
+                    <button onclick="selectCustomIcon()" style="background: rgba(66,165,245,0.15); border: 1px solid rgba(66,165,245,0.4); color: #42a5f5; padding: 10px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; white-space: nowrap;">Use icon</button>
+                    <span id="iconCustomPreview" style="font-family: 'Material Symbols Outlined'; font-size: 28px; color: rgba(255,255,255,0.4); min-width: 32px; text-align: center;"></span>
+                </div>
+                <div style="margin-bottom: 12px; font-size: 11px; color: rgba(255,255,255,0.35);">
+                    Browse all icons at <a href="https://fonts.google.com/icons" target="_blank" rel="noopener" style="color: rgba(66,165,245,0.7); text-decoration: underline;">fonts.google.com/icons</a>
+                </div>
                 <div class="icon-grid" id="iconGrid">
                     <!-- Icons will be generated here -->
                 </div>
