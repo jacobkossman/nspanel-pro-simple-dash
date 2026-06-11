@@ -813,7 +813,7 @@ body {
 }
 
 .tile-state {
-    font-size: 10px;
+    font-size: var(--tile-state-size);
     opacity: 0.5;
     text-transform: uppercase;
     font-weight: 400;
