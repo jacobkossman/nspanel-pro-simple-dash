@@ -1430,7 +1430,7 @@ function createSensorTile(entity, state) {
         const value = parseFloat(state.state);
         const displayValue = isNaN(value) ? state.state : Math.round(value);
         const unit = state.attributes.unit_of_measurement || '';
-        
+
         tempDisplay.innerHTML = `${displayValue}<span class="temp-unit">${unit}</span>`;
     } else {
         tempDisplay.textContent = '—';
@@ -2204,7 +2204,7 @@ function showRoomEditor(mode) {
                     <span style="font-size: 12px; color: #888;">Hide state text on tile</span>
                 </label>
             </div>
-            <button class="add-btn" onclick="addEntity()">+ Add Entity</button>
+            <button class="add-btn" id="addEntityBtn" onclick="addEntity()">+ Add Entity</button>
         </div>
 
         <div class="form-group">
@@ -2319,6 +2319,7 @@ function showRoomEditor(mode) {
 
     // Store current editing data
     window.editingRoomData = roomData;
+    editingEntityIndex = null;
 }
 
 async function loadSelectedRoom() {
@@ -2482,6 +2483,8 @@ function closeAdmin() {
     document.getElementById('adminPanel').classList.remove('active');
 }
 
+let editingEntityIndex = null;
+
 function addEntity() {
     const id = document.getElementById('newEntityId').value.trim();
     const label = document.getElementById('newEntityLabel').value.trim();
@@ -2501,20 +2504,27 @@ function addEntity() {
     if (icon) entity.icon = icon;
     if (hideState) entity.hideState = true;
 
-    window.editingRoomData.entities.push(entity);
+    if (editingEntityIndex !== null) {
+        window.editingRoomData.entities.splice(editingEntityIndex, 0, entity);
+        editingEntityIndex = null;
+        document.getElementById('addEntityBtn').textContent = '+ Add Entity';
+    } else {
+        window.editingRoomData.entities.push(entity);
+    }
+
     document.getElementById('newEntityId').value = '';
     document.getElementById('newEntityLabel').value = '';
     document.getElementById('newEntityIcon').value = '';
     document.getElementById('selectedIconPreview').textContent = 'search';
     document.getElementById('selectedIconName').textContent = 'Choose icon';
     document.getElementById('newEntityHideState').checked = false;
-    
+
     refreshEntityList();
 }
 
 function editEntity(index) {
     if (!window.editingRoomData || !window.editingRoomData.entities[index]) return;
-    
+
     const entity = window.editingRoomData.entities[index];
     document.getElementById('newEntityId').value = entity.id;
     document.getElementById('newEntityLabel').value = entity.label;
@@ -2522,12 +2532,12 @@ function editEntity(index) {
     document.getElementById('selectedIconPreview').textContent = entity.icon || 'search';
     document.getElementById('selectedIconName').textContent = entity.icon || 'Choose icon';
     document.getElementById('newEntityHideState').checked = entity.hideState || false;
-    
-    // Remove the entity so it can be re-added with new values
+
     window.editingRoomData.entities.splice(index, 1);
+    editingEntityIndex = index;
+    document.getElementById('addEntityBtn').textContent = 'Update Entity';
     refreshEntityList();
-    
-    // Focus on label input
+
     document.getElementById('newEntityLabel').focus();
 }
 
