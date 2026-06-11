@@ -20,7 +20,8 @@ const DEFAULT_GLOBAL_CONFIG = {
     assistantEntity: '', // Google Assistant SDK entity
     disableBuiltInScreensaver: false,
     screensaverTimeout: 10, // seconds
-    hideVoiceMessages: false
+    hideVoiceMessages: false,
+    deviceModel: 'pro'
 };
 
 const ENTITIES_PER_PAGE = 4;
@@ -2066,6 +2067,14 @@ function showGlobalSettings() {
         <div class="error-message" id="errorMessage"></div>
 
         <div class="form-group">
+            <label class="form-label">Device Model</label>
+            <select class="form-input" id="deviceModelInput">
+                <option value="pro" ${(globalConfig.deviceModel || 'pro') === 'pro' ? 'selected' : ''}>NSPanel Pro (480×480)</option>
+                <option value="pro120" ${globalConfig.deviceModel === 'pro120' ? 'selected' : ''}>NSPanel Pro 120 (480×890)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
             <label class="form-label">Home Assistant URL</label>
             <input type="text" class="form-input" id="haUrlInput" placeholder="http://homeassistant.local:8123" value="${globalConfig.haUrl}">
             <small style="color: #888; font-size: 12px;">Include http:// or https://</small>
@@ -2410,6 +2419,7 @@ async function saveGlobalSettings() {
     globalConfig.haUrl = document.getElementById('haUrlInput').value.trim().replace(/\/$/, '');
     globalConfig.haToken = document.getElementById('haTokenInput').value.trim();
     globalConfig.assistantEntity = document.getElementById('assistantEntityInput').value.trim();
+    globalConfig.deviceModel = document.getElementById('deviceModelInput').value;
     globalConfig.hideVoiceMessages = document.getElementById('hideVoiceMessagesInput').checked;
     globalConfig.disableBuiltInScreensaver = document.getElementById('disableScreensaverInput').checked;
     globalConfig.screensaverTimeout = parseInt(document.getElementById('screensaverTimeoutInput').value) || 10;
@@ -2436,6 +2446,7 @@ async function saveGlobalSettings() {
         config.screensaverTimeout = globalConfig.screensaverTimeout;
     }
 
+    applyDeviceModel();
     applyVoiceMessageVisibility();
 
     // Test connection
@@ -3169,6 +3180,7 @@ async function init() {
     globalConfig = await loadGlobalConfig();
     roomConfigs = await loadRoomConfigs();
     
+    applyDeviceModel();
     applyVoiceMessageVisibility();
 
     // Normal mode - setup inactivity screensaver only if not disabled
@@ -3331,6 +3343,10 @@ async function loadVoiceMessages() {
         console.error('Failed to load voice messages:', error);
         voiceMessages = [];
     }
+}
+
+function applyDeviceModel() {
+    document.querySelector('.container').classList.toggle('pro120', globalConfig.deviceModel === 'pro120');
 }
 
 function applyVoiceMessageVisibility() {
