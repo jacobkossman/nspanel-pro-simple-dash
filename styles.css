@@ -1,3 +1,30 @@
+/* ============================================
+   DESIGN TOKENS — edit here to restyle the UI
+   ============================================ */
+:root {
+    /* Font (family overridden dynamically via Global Settings) */
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+
+    /* Background — swap to a flat color, e.g. --bg: #111 */
+    --bg:            linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+    --gradient-text: linear-gradient(135deg, #fff 0%, #aaa 100%);
+
+    /* Tiles */
+    --tile-radius:      16px;
+    --tile-padding:     16px;
+    --tile-icon-size:   28px;
+    --tile-label-size:  14px;
+    --tile-state-size:  10px;
+
+    /* Tile state gradients — swap to a flat color, e.g. --tile-on-bg: rgba(66,165,245,0.15) */
+    --tile-on-bg:      linear-gradient(135deg, rgba(66, 165, 245, 0.15) 0%, rgba(33, 150, 243, 0.05) 100%);
+    --tile-climate-bg: linear-gradient(135deg, rgba(33, 150, 243, 0.15) 0%, rgba(33, 150, 243, 0.05) 100%);
+    --tile-heating-bg: linear-gradient(135deg, rgba(255, 87, 34, 0.2) 0%, rgba(255, 87, 34, 0.1) 100%);
+    --tile-cooling-bg: linear-gradient(135deg, rgba(3, 169, 244, 0.2) 0%, rgba(3, 169, 244, 0.1) 100%);
+    --tile-sensor-bg:  linear-gradient(135deg, rgba(156, 39, 176, 0.15) 0%, rgba(156, 39, 176, 0.05) 100%);
+    --tile-spotify-bg: linear-gradient(135deg, rgba(30, 215, 96, 0.15) 0%, rgba(29, 185, 84, 0.05) 100%);
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -6,8 +33,8 @@
 }
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-    background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+    font-family: var(--font-body);
+    background: var(--bg);
     color: #ffffff;
     overflow: hidden;
     touch-action: pan-y;
@@ -161,7 +188,7 @@ body {
     font-size: 20px;
     font-weight: 300;
     letter-spacing: 0.5px;
-    background: linear-gradient(135deg, #fff 0%, #aaa 100%);
+    background: var(--gradient-text);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -252,8 +279,8 @@ body {
 .tile {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    padding: 16px;
+    border-radius: var(--tile-radius);
+    padding: var(--tile-padding);
     cursor: pointer;
     display: flex;
     flex-direction: column;
@@ -290,7 +317,7 @@ body {
 
 .tile-icon {
     font-family: 'Material Symbols Outlined';
-    font-size: 28px;
+    font-size: var(--tile-icon-size);
     font-weight: 300;
     margin-bottom: 8px;
     opacity: 0.8;
@@ -309,7 +336,7 @@ body {
 }
 
 .tile.climate {
-    background: linear-gradient(135deg, rgba(33, 150, 243, 0.15) 0%, rgba(33, 150, 243, 0.05) 100%);
+    background: var(--tile-climate-bg);
     border-color: rgba(33, 150, 243, 0.3);
     justify-content: center;
     align-items: center;
@@ -317,13 +344,13 @@ body {
 }
 
 .tile.climate.heating {
-    background: linear-gradient(135deg, rgba(255, 87, 34, 0.2) 0%, rgba(255, 87, 34, 0.1) 100%);
+    background: var(--tile-heating-bg);
     border-color: rgba(255, 87, 34, 0.4);
     box-shadow: 0 8px 24px rgba(255, 87, 34, 0.2);
 }
 
 .tile.climate.cooling {
-    background: linear-gradient(135deg, rgba(3, 169, 244, 0.2) 0%, rgba(3, 169, 244, 0.1) 100%);
+    background: var(--tile-cooling-bg);
     border-color: rgba(3, 169, 244, 0.4);
     box-shadow: 0 8px 24px rgba(3, 169, 244, 0.2);
 }
@@ -333,7 +360,7 @@ body {
 }
 
 .tile.sensor {
-    background: linear-gradient(135deg, rgba(156, 39, 176, 0.15) 0%, rgba(156, 39, 176, 0.05) 100%);
+    background: var(--tile-sensor-bg);
     border-color: rgba(156, 39, 176, 0.3);
     cursor: default;
     justify-content: center;
@@ -454,7 +481,7 @@ body {
 }
 
 .tile.media_player .tile-label {
-    font-size: 14px;
+    font-size: var(--tile-label-size);
     font-weight: 600;
     margin-bottom: 4px;
     letter-spacing: 0;
@@ -606,7 +633,7 @@ body {
     font-weight: 200;
     letter-spacing: -1px;
     margin-bottom: 8px;
-    background: linear-gradient(135deg, #fff 0%, #888 100%);
+    background: var(--gradient-text);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -662,7 +689,7 @@ body {
     font-size: 48px;
     font-weight: 200;
     letter-spacing: -1px;
-    background: linear-gradient(135deg, #fff 0%, #888 100%);
+    background: var(--gradient-text);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -676,7 +703,7 @@ body {
 }
 
 .tile-label {
-    font-size: 14px;
+    font-size: var(--tile-label-size);
     font-weight: 500;
     margin-bottom: 2px;
     letter-spacing: 0.2px;
@@ -696,7 +723,7 @@ body {
 }
 
 .tile.assistant-command {
-    background: linear-gradient(135deg, rgba(66, 165, 245, 0.15) 0%, rgba(33, 150, 243, 0.05) 100%);
+    background: var(--tile-on-bg);
     border-color: rgba(66, 165, 245, 0.3);
 }
 
@@ -711,7 +738,7 @@ body {
 }
 
 .tile.spotify-playlist {
-    background: linear-gradient(135deg, rgba(30, 215, 96, 0.15) 0%, rgba(29, 185, 84, 0.05) 100%);
+    background: var(--tile-spotify-bg);
     border-color: rgba(30, 215, 96, 0.3);
 }
 
@@ -970,7 +997,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+    background: var(--bg);
     z-index: 1000;
     overflow-y: auto;
     padding: 20px;
@@ -1274,7 +1301,7 @@ body {
     font-size: 56px;
     font-weight: 200;
     letter-spacing: -1px;
-    background: linear-gradient(135deg, #fff 0%, #888 100%);
+    background: var(--gradient-text);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

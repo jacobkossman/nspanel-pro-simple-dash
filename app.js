@@ -21,7 +21,8 @@ const DEFAULT_GLOBAL_CONFIG = {
     disableBuiltInScreensaver: false,
     screensaverTimeout: 10, // seconds
     hideVoiceMessages: false,
-    deviceModel: 'pro'
+    deviceModel: 'pro',
+    fontFamily: 'Inter'
 };
 
 const ENTITIES_PER_PAGE = 4;
@@ -2112,6 +2113,15 @@ function showGlobalSettings() {
         </div>
 
         <div class="form-group">
+            <label class="form-label">Font Family</label>
+            <select class="form-input" id="fontFamilyInput">
+                ${Object.keys(FONT_OPTIONS).map(name =>
+                    `<option value="${name}" ${(globalConfig.fontFamily || 'Inter') === name ? 'selected' : ''}>${name}</option>`
+                ).join('')}
+            </select>
+        </div>
+
+        <div class="form-group">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                 <input type="checkbox" id="hideVoiceMessagesInput" ${globalConfig.hideVoiceMessages ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer;">
                 <span class="form-label" style="margin: 0;">Hide Voice Messages</span>
@@ -2395,6 +2405,7 @@ async function saveGlobalSettings() {
     globalConfig.haUrl = document.getElementById('haUrlInput').value.trim().replace(/\/$/, '');
     globalConfig.haToken = document.getElementById('haTokenInput').value.trim();
     globalConfig.assistantEntity = document.getElementById('assistantEntityInput').value.trim();
+    globalConfig.fontFamily = document.getElementById('fontFamilyInput').value;
     globalConfig.deviceModel = document.getElementById('deviceModelInput').value;
     globalConfig.hideVoiceMessages = document.getElementById('hideVoiceMessagesInput').checked;
     globalConfig.disableBuiltInScreensaver = document.getElementById('disableScreensaverInput').checked;
@@ -2422,6 +2433,7 @@ async function saveGlobalSettings() {
         config.screensaverTimeout = globalConfig.screensaverTimeout;
     }
 
+    applyFontFamily();
     applyDeviceModel();
     applyVoiceMessageVisibility();
 
@@ -3182,6 +3194,7 @@ async function init() {
     globalConfig = await loadGlobalConfig();
     roomConfigs = await loadRoomConfigs();
     
+    applyFontFamily();
     applyDeviceModel();
     applyVoiceMessageVisibility();
 
@@ -3345,6 +3358,31 @@ async function loadVoiceMessages() {
         console.error('Failed to load voice messages:', error);
         voiceMessages = [];
     }
+}
+
+const FONT_OPTIONS = {
+    'Inter':   { url: 'Inter:wght@200;300;400;500;600;700', stack: "'Inter', sans-serif" },
+    'Roboto':  { url: 'Roboto:wght@300;400;500;700', stack: "'Roboto', sans-serif" },
+    'Nunito':  { url: 'Nunito:wght@300;400;500;600;700', stack: "'Nunito', sans-serif" },
+    'DM Sans': { url: 'DM+Sans:wght@300;400;500;600;700', stack: "'DM Sans', sans-serif" },
+    'Outfit':  { url: 'Outfit:wght@300;400;500;600;700', stack: "'Outfit', sans-serif" },
+    'Poppins': { url: 'Poppins:wght@300;400;500;600;700', stack: "'Poppins', sans-serif" },
+};
+
+function applyFontFamily() {
+    const name = globalConfig.fontFamily || 'Inter';
+    const font = FONT_OPTIONS[name] || FONT_OPTIONS['Inter'];
+
+    let link = document.getElementById('dynamicFontLink');
+    if (!link) {
+        link = document.createElement('link');
+        link.id = 'dynamicFontLink';
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+    }
+    link.href = `https://fonts.googleapis.com/css2?family=${font.url}&display=swap`;
+
+    document.documentElement.style.setProperty('--font-body', font.stack);
 }
 
 function applyDeviceModel() {
