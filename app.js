@@ -19,7 +19,8 @@ const DEFAULT_GLOBAL_CONFIG = {
     haToken: '',
     assistantEntity: '', // Google Assistant SDK entity
     disableBuiltInScreensaver: false,
-    screensaverTimeout: 10 // seconds
+    screensaverTimeout: 10, // seconds
+    hideVoiceMessages: false
 };
 
 const ENTITIES_PER_PAGE = 4;
@@ -2098,6 +2099,14 @@ function showGlobalSettings() {
 
         <div class="form-group">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="hideVoiceMessagesInput" ${globalConfig.hideVoiceMessages ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer;">
+                <span class="form-label" style="margin: 0;">Hide Voice Messages</span>
+            </label>
+            <small style="color: #888; font-size: 12px; display: block; margin-top: 4px;">Hides the phone button from the header</small>
+        </div>
+
+        <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                 <input type="checkbox" id="disableScreensaverInput" ${globalConfig.disableBuiltInScreensaver ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer;">
                 <span class="form-label" style="margin: 0;">Disable Built-in Screensaver</span>
             </label>
@@ -2351,6 +2360,7 @@ async function saveGlobalSettings() {
     globalConfig.haUrl = document.getElementById('haUrlInput').value.trim().replace(/\/$/, '');
     globalConfig.haToken = document.getElementById('haTokenInput').value.trim();
     globalConfig.assistantEntity = document.getElementById('assistantEntityInput').value.trim();
+    globalConfig.hideVoiceMessages = document.getElementById('hideVoiceMessagesInput').checked;
     globalConfig.disableBuiltInScreensaver = document.getElementById('disableScreensaverInput').checked;
     globalConfig.screensaverTimeout = parseInt(document.getElementById('screensaverTimeoutInput').value) || 10;
     globalConfig.screensaverTempEntity = document.getElementById('screensaverTempEntityInput').value.trim();
@@ -2375,6 +2385,8 @@ async function saveGlobalSettings() {
         config.disableBuiltInScreensaver = globalConfig.disableBuiltInScreensaver;
         config.screensaverTimeout = globalConfig.screensaverTimeout;
     }
+
+    applyVoiceMessageVisibility();
 
     // Test connection
     const states = await getStates();
@@ -3082,6 +3094,8 @@ async function init() {
     globalConfig = await loadGlobalConfig();
     roomConfigs = await loadRoomConfigs();
     
+    applyVoiceMessageVisibility();
+
     // Normal mode - setup inactivity screensaver only if not disabled
     if (!globalConfig.disableBuiltInScreensaver) {
         setupInactivityDetection();
@@ -3242,6 +3256,11 @@ async function loadVoiceMessages() {
         console.error('Failed to load voice messages:', error);
         voiceMessages = [];
     }
+}
+
+function applyVoiceMessageVisibility() {
+    document.getElementById('phoneBtn').style.display =
+        globalConfig.hideVoiceMessages ? 'none' : '';
 }
 
 function updatePhoneBadge() {
