@@ -1503,7 +1503,11 @@ body {
 }
 
 
-/* Icon Picker Modal - Wider than other modals */
+/* Icon Picker Modal - Wider than other modals, higher z-index to overlay entity editor */
+#iconPickerModal {
+    z-index: 2100;
+}
+
 #iconPickerModal .climate-modal-content {
     width: 440px;
     max-width: 95%;
