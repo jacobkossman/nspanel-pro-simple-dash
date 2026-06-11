@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  simpledash:
+    build: .
+    container_name: simpledash
+    ports:
+      - "8080:80"
+    environment:
+      # Required: URL of your Home Assistant instance (scheme required, e.g. http:// or https://)
+      - HA_URL=http://homeassistant.local:8123
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./styles.css:/usr/share/nginx/html/styles.css:ro
+      - ./app.js:/usr/share/nginx/html/app.js:ro
+      - ./api.php:/usr/share/nginx/html/api.php:ro
+      - simpledash-data:/data
+    restart: unless-stopped
+
+volumes:
+  simpledash-data:
