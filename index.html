@@ -36,6 +36,12 @@
             <div class="loading-overlay" id="loadingOverlay">Loading...</div>
         </div>
         <div class="page-dots" id="pageDots"></div>
+        <button class="debug-edit-btn" id="debugEditBtn" onclick="openAdmin()" title="Open Admin" style="display:none;">
+            <span class="material-symbols-outlined">edit</span>
+        </button>
+        <button class="debug-edit-btn" id="debugSettingsBtn" onclick="openAdmin(); showGlobalSettings();" title="Global Settings" style="display:none; bottom: 64px;">
+            <span class="material-symbols-outlined">settings</span>
+        </button>
     </div>
 
     <!-- Screensaver -->

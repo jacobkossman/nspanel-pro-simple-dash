@@ -1813,20 +1813,21 @@ function prevPage() {
 // ============================================
 function setupTouchHandlers() {
     const container = document.getElementById('pagesWrapper');
-    
+    let longPressTimer = null;
+
     container.addEventListener('touchstart', (e) => {
-        // Don't track swipe if touching a slider
-        if (e.target.classList.contains('brightness-slider')) {
-            return;
-        }
+        if (e.target.classList.contains('brightness-slider')) return;
         touchStartX = e.touches[0].clientX;
+        longPressTimer = setTimeout(() => { openAdmin(); }, 2000);
+    }, { passive: true });
+
+    container.addEventListener('touchmove', () => {
+        if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
     }, { passive: true });
 
     container.addEventListener('touchend', (e) => {
-        // Don't handle swipe if it was a slider interaction
-        if (e.target.classList.contains('brightness-slider') || isSliderDragging) {
-            return;
-        }
+        if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+        if (e.target.classList.contains('brightness-slider') || isSliderDragging) return;
         touchEndX = e.changedTouches[0].clientX;
         handleSwipe();
     }, { passive: true });
@@ -3213,6 +3214,11 @@ async function init() {
     const urlParams = new URLSearchParams(window.location.search);
     const hashParams = window.location.hash;
     const isScreensaverMode = urlParams.get('screensaver') === 'true' || hashParams === '#screensaver';
+
+    if (urlParams.get('debug') === 'true') {
+        document.getElementById('debugEditBtn').style.display = 'flex';
+        document.getElementById('debugSettingsBtn').style.display = 'flex';
+    }
     
     if (isScreensaverMode) {
         // Screensaver-only mode - works without room config
