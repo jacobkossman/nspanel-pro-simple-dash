@@ -1057,7 +1057,8 @@ function createLightTile(entity, state) {
     const stateValue = state ? state.state : null;
     const isOn = stateValue === 'on';
     const isUnavailable = !state || stateValue === 'unavailable';
-    const isDimmable = state.attributes.supported_color_modes && 
+    const isDimmable = !entity.disableDimming &&
+        state.attributes.supported_color_modes &&
         state.attributes.supported_color_modes.some(mode => mode !== 'onoff');
 
     if (isOn) {
@@ -1159,16 +1160,16 @@ function createLightTile(entity, state) {
                 const brightnessChange = -(deltaY / tileHeight) * 255;
                 let newBrightness = Math.round(swipeStartBrightness + brightnessChange);
                 newBrightness = Math.max(0, Math.min(255, newBrightness));
-                
+
                 setBrightness(entity.id, newBrightness);
-            } else {
-                // It was a tap, toggle the light
-                handleTileClick(entity.id, 'light');
+                e.preventDefault(); // block synthetic click after a swipe
             }
-            
+
             isSliderDragging = false;
             isSwiping = false;
-        }, { passive: true });
+        }, { passive: false });
+
+        tile.onclick = () => handleTileClick(entity.id, 'light');
     } else if (!isUnavailable) {
         tile.onclick = () => handleTileClick(entity.id, 'light');
     }
@@ -1305,16 +1306,16 @@ function createCoverTile(entity, state) {
                 const positionChange = -(deltaY / tileHeight) * 100;
                 let newPosition = Math.round(swipeStartPosition + positionChange);
                 newPosition = Math.max(0, Math.min(100, newPosition));
-                
+
                 setCoverPosition(entity.id, newPosition);
-            } else {
-                // It was a tap, toggle the cover
-                handleTileClick(entity.id, 'cover');
+                e.preventDefault(); // block synthetic click after a swipe
             }
-            
+
             isSliderDragging = false;
             isSwiping = false;
-        }, { passive: true });
+        }, { passive: false });
+
+        tile.onclick = () => handleTileClick(entity.id, 'cover');
     } else if (!isUnavailable) {
         tile.onclick = () => handleTileClick(entity.id, 'cover');
     }
@@ -2229,7 +2230,23 @@ function showRoomEditor(mode) {
             <div class="entity-list" id="entityList"></div>
             <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
                 <div style="display: flex; gap: 8px;">
-                    <input type="text" class="form-input" id="newEntityId" placeholder="light.living_room" style="flex: 2;">
+                    <select class="form-input" id="newEntityDomain" onchange="updateEntityFormForDomain()" style="flex: 1;">
+                        <option value="light">light</option>
+                        <option value="switch">switch</option>
+                        <option value="scene">scene</option>
+                        <option value="script">script</option>
+                        <option value="climate">climate</option>
+                        <option value="sensor">sensor</option>
+                        <option value="media_player">media_player</option>
+                        <option value="cover">cover</option>
+                        <option value="lock">lock</option>
+                        <option value="fan">fan</option>
+                        <option value="group">group</option>
+                        <option value="input_boolean">input_boolean</option>
+                        <option value="automation">automation</option>
+                        <option value="weather">weather</option>
+                    </select>
+                    <input type="text" class="form-input" id="newEntityId" placeholder="living_room" style="flex: 2;">
                     <input type="text" class="form-input" id="newEntityLabel" placeholder="Living Room" style="flex: 2;">
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center;">
@@ -2244,8 +2261,14 @@ function showRoomEditor(mode) {
                     <input type="checkbox" id="newEntityHideState" style="width: 18px; height: 18px; cursor: pointer;">
                     <span style="font-size: 12px; color: #888;">Hide state text on tile</span>
                 </label>
-                <div style="display: flex; align-items: center; gap: 8px; padding: 4px 0;">
-                    <span style="font-size: 12px; color: #888;">Decimal places (sensors):</span>
+                <div id="entityOptLight" style="display: none;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px 0;">
+                        <input type="checkbox" id="newEntityDisableDimming" style="width: 18px; height: 18px; cursor: pointer;">
+                        <span style="font-size: 12px; color: #888;">Disable dimming (toggle only)</span>
+                    </label>
+                </div>
+                <div id="entityOptSensor" style="display: none; align-items: center; gap: 8px; padding: 4px 0;">
+                    <span style="font-size: 12px; color: #888;">Decimal places:</span>
                     <select id="newEntityDecimals" class="form-input" style="width: 80px; padding: 6px 8px;">
                         <option value="">Default (0)</option>
                         <option value="1">1</option>
@@ -2549,14 +2572,26 @@ function closeAdmin() {
 
 let editingEntityIndex = null;
 
+function updateEntityFormForDomain() {
+    const domain = document.getElementById('newEntityDomain').value;
+    document.getElementById('entityOptLight').style.display = domain === 'light' ? 'block' : 'none';
+    document.getElementById('entityOptSensor').style.display = domain === 'sensor' ? 'flex' : 'none';
+}
+
 function addEntity() {
-    const id = document.getElementById('newEntityId').value.trim();
+    const domain = document.getElementById('newEntityDomain').value;
+    const rawId = document.getElementById('newEntityId').value.trim();
     const label = document.getElementById('newEntityLabel').value.trim();
     const icon = document.getElementById('newEntityIcon').value.trim();
     const hideState = document.getElementById('newEntityHideState').checked;
 
-    if (!id || !label) {
+    if (!rawId || !label) {
         showError('Please enter both entity ID and label');
+        return;
+    }
+
+    if (rawId.includes('.')) {
+        showError('Enter only the ID without the domain (e.g. "living_room", not "light.living_room")');
         return;
     }
 
@@ -2564,11 +2599,17 @@ function addEntity() {
         window.editingRoomData = { entities: [] };
     }
 
-    const decimalsRaw = document.getElementById('newEntityDecimals').value;
-    const entity = { id, label };
+    const entity = { id: `${domain}.${rawId}`, label };
     if (icon) entity.icon = icon;
     if (hideState) entity.hideState = true;
-    if (decimalsRaw !== '') entity.decimals = parseInt(decimalsRaw);
+
+    if (domain === 'light') {
+        if (document.getElementById('newEntityDisableDimming').checked) entity.disableDimming = true;
+    }
+    if (domain === 'sensor') {
+        const decimalsRaw = document.getElementById('newEntityDecimals').value;
+        if (decimalsRaw !== '') entity.decimals = parseInt(decimalsRaw);
+    }
 
     if (editingEntityIndex !== null) {
         window.editingRoomData.entities.splice(editingEntityIndex, 0, entity);
@@ -2584,6 +2625,7 @@ function addEntity() {
     document.getElementById('selectedIconPreview').textContent = 'search';
     document.getElementById('selectedIconName').textContent = 'Choose icon';
     document.getElementById('newEntityHideState').checked = false;
+    document.getElementById('newEntityDisableDimming').checked = false;
     document.getElementById('newEntityDecimals').value = '';
 
     refreshEntityList();
@@ -2593,13 +2635,20 @@ function editEntity(index) {
     if (!window.editingRoomData || !window.editingRoomData.entities[index]) return;
 
     const entity = window.editingRoomData.entities[index];
-    document.getElementById('newEntityId').value = entity.id;
+    const dotIndex = entity.id.indexOf('.');
+    const domain = dotIndex !== -1 ? entity.id.substring(0, dotIndex) : 'light';
+    const rawId = dotIndex !== -1 ? entity.id.substring(dotIndex + 1) : entity.id;
+
+    document.getElementById('newEntityDomain').value = domain;
+    document.getElementById('newEntityId').value = rawId;
     document.getElementById('newEntityLabel').value = entity.label;
     document.getElementById('newEntityIcon').value = entity.icon || '';
     document.getElementById('selectedIconPreview').textContent = entity.icon || 'search';
     document.getElementById('selectedIconName').textContent = entity.icon || 'Choose icon';
     document.getElementById('newEntityHideState').checked = entity.hideState || false;
+    document.getElementById('newEntityDisableDimming').checked = entity.disableDimming || false;
     document.getElementById('newEntityDecimals').value = entity.decimals !== undefined ? entity.decimals : '';
+    updateEntityFormForDomain();
 
     window.editingRoomData.entities.splice(index, 1);
     editingEntityIndex = index;
