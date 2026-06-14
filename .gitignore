@@ -36,3 +36,6 @@ active_room_*.txt
 # Environment Files
 .env
 .env.local
+
+# Local design overrides
+custom.css
