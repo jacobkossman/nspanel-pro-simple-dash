@@ -883,12 +883,15 @@ function createTile(entity, state) {
     const isOn = stateValue === 'on' || stateValue === 'playing' || stateValue === 'unlocked';
     const isUnavailable = !state || stateValue === 'unavailable';
 
+    tile.classList.add(domain);
     if (isOn) {
-        tile.classList.add('on', domain);
+        tile.classList.add('on');
     }
 
     if (isUnavailable) {
         tile.classList.add('unavailable');
+    } else if (entity.disableAction) {
+        tile.classList.add('no-action');
     }
 
     // Add icon
@@ -917,7 +920,7 @@ function createTile(entity, state) {
     tile.appendChild(icon);
     tile.appendChild(content);
 
-    if (!isUnavailable) {
+    if (!isUnavailable && !entity.disableAction) {
         tile.onclick = () => handleTileClick(entity.id, domain);
     }
 
@@ -1077,7 +1080,7 @@ function createLightTile(entity, state) {
     const stateValue = state ? state.state : null;
     const isOn = stateValue === 'on';
     const isUnavailable = !state || stateValue === 'unavailable';
-    const isDimmable = !entity.disableDimming &&
+    const isDimmable = !entity.disableDimming && !entity.disableAction &&
         state.attributes.supported_color_modes &&
         state.attributes.supported_color_modes.some(mode => mode !== 'onoff');
 
@@ -1087,8 +1090,10 @@ function createLightTile(entity, state) {
 
     if (isUnavailable) {
         tile.classList.add('unavailable');
+    } else if (entity.disableAction) {
+        tile.classList.add('no-action');
     }
-    
+
     if (isDimmable && !isUnavailable) {
         tile.classList.add('has-slider');
     }
@@ -1190,7 +1195,7 @@ function createLightTile(entity, state) {
         }, { passive: false });
 
         tile.onclick = () => handleTileClick(entity.id, 'light');
-    } else if (!isUnavailable) {
+    } else if (!isUnavailable && !entity.disableAction) {
         tile.onclick = () => handleTileClick(entity.id, 'light');
     }
 
@@ -1231,9 +1236,11 @@ function createCoverTile(entity, state) {
 
     if (isUnavailable) {
         tile.classList.add('unavailable');
+    } else if (entity.disableAction) {
+        tile.classList.add('no-action');
     }
-    
-    if (supportsPosition && !isUnavailable) {
+
+    if (supportsPosition && !isUnavailable && !entity.disableAction) {
         tile.classList.add('has-slider');
     }
 
@@ -1269,7 +1276,7 @@ function createCoverTile(entity, state) {
     tile.appendChild(content);
 
     // Add position progress bar for covers with position support
-    if (supportsPosition && !isUnavailable) {
+    if (supportsPosition && !isUnavailable && !entity.disableAction) {
         const progressContainer = document.createElement('div');
         progressContainer.className = 'brightness-slider-container';
         
@@ -1336,7 +1343,7 @@ function createCoverTile(entity, state) {
         }, { passive: false });
 
         tile.onclick = () => handleTileClick(entity.id, 'cover');
-    } else if (!isUnavailable) {
+    } else if (!isUnavailable && !entity.disableAction) {
         tile.onclick = () => handleTileClick(entity.id, 'cover');
     }
 
@@ -1392,6 +1399,8 @@ function createClimateTile(entity, state) {
 
     if (isUnavailable) {
         tile.classList.add('unavailable');
+    } else if (entity.disableAction) {
+        tile.classList.add('no-action');
     }
 
     const label = document.createElement('div');
@@ -1400,7 +1409,7 @@ function createClimateTile(entity, state) {
 
     const tempDisplay = document.createElement('div');
     tempDisplay.className = 'temp-display';
-    
+
     if (state && state.attributes.current_temperature !== undefined) {
         const currentTemp = Math.round(state.attributes.current_temperature);
         const targetTemp = state.attributes.temperature ? Math.round(state.attributes.temperature) : null;
@@ -1424,7 +1433,7 @@ function createClimateTile(entity, state) {
     }
 
     // Open climate modal on click
-    if (!isUnavailable) {
+    if (!isUnavailable && !entity.disableAction) {
         tile.onclick = () => openClimateModal(entity.id);
     }
 
@@ -1517,11 +1526,11 @@ function createWeatherTile(entity, state) {
         }
     }
 
-    if (!isUnavailable && !entity.hideWeatherForecast) {
+    if (!isUnavailable && !entity.hideWeatherForecast && !entity.disableAction) {
         tile.onclick = () => openWeatherForecast(entity.id);
         tile.style.cursor = 'pointer';
-    } else {
-        tile.style.cursor = 'default';
+    } else if (!isUnavailable && entity.disableAction) {
+        tile.classList.add('no-action');
     }
 
     return tile;
@@ -1540,6 +1549,8 @@ function createMediaPlayerTile(entity, state) {
 
     if (isUnavailable) {
         tile.classList.add('unavailable');
+    } else if (entity.disableAction) {
+        tile.classList.add('no-action');
     }
 
     // Add album art background if available
@@ -1600,10 +1611,10 @@ function createMediaPlayerTile(entity, state) {
     tile.appendChild(content);
 
     // Add media controls
-    if (!isUnavailable) {
+    if (!isUnavailable && !entity.disableAction) {
         const controls = document.createElement('div');
         controls.className = 'media-controls';
-        
+
         const prevBtn = document.createElement('button');
         prevBtn.className = 'media-btn';
         prevBtn.textContent = 'skip_previous';
@@ -1611,7 +1622,7 @@ function createMediaPlayerTile(entity, state) {
             e.stopPropagation();
             callService('media_player', 'media_previous_track', entity.id);
         };
-        
+
         const playPauseBtn = document.createElement('button');
         playPauseBtn.className = 'media-btn play-pause';
         playPauseBtn.textContent = isPlaying ? 'pause' : 'play_arrow';
@@ -1619,7 +1630,7 @@ function createMediaPlayerTile(entity, state) {
             e.stopPropagation();
             callService('media_player', 'media_play_pause', entity.id);
         };
-        
+
         const nextBtn = document.createElement('button');
         nextBtn.className = 'media-btn';
         nextBtn.textContent = 'skip_next';
@@ -1627,7 +1638,7 @@ function createMediaPlayerTile(entity, state) {
             e.stopPropagation();
             callService('media_player', 'media_next_track', entity.id);
         };
-        
+
         controls.appendChild(prevBtn);
         controls.appendChild(playPauseBtn);
         controls.appendChild(nextBtn);
@@ -2613,6 +2624,7 @@ function openEntityModal(index) {
         document.getElementById('selectedIconPreview').textContent = entity.icon || 'search';
         document.getElementById('selectedIconName').textContent = entity.icon || 'Choose icon';
         document.getElementById('newEntityHideState').checked = entity.hideState || false;
+        document.getElementById('newEntityDisableAction').checked = entity.disableAction || false;
         document.getElementById('newEntityDisableDimming').checked = entity.disableDimming || false;
         document.getElementById('newEntityDecimals').value = entity.decimals !== undefined ? entity.decimals : '';
         document.getElementById('newEntityHideWeatherName').checked = entity.hideWeatherName || false;
@@ -2628,6 +2640,7 @@ function openEntityModal(index) {
         document.getElementById('selectedIconPreview').textContent = 'search';
         document.getElementById('selectedIconName').textContent = 'Choose icon';
         document.getElementById('newEntityHideState').checked = false;
+        document.getElementById('newEntityDisableAction').checked = false;
         document.getElementById('newEntityDisableDimming').checked = false;
         document.getElementById('newEntityDecimals').value = '';
         document.getElementById('newEntityHideWeatherName').checked = false;
@@ -2669,6 +2682,7 @@ function saveEntityModal() {
     const entity = { id: `${domain}.${rawId}`, label };
     if (icon) entity.icon = icon;
     if (hideState) entity.hideState = true;
+    if (document.getElementById('newEntityDisableAction').checked) entity.disableAction = true;
     if (domain === 'light' && document.getElementById('newEntityDisableDimming').checked) entity.disableDimming = true;
     if (domain === 'sensor') {
         const decimalsRaw = document.getElementById('newEntityDecimals').value;
