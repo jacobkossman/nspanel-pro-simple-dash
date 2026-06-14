@@ -21,8 +21,8 @@
     --tile-climate-bg: linear-gradient(135deg, rgba(33, 150, 243, 0.15) 0%, rgba(33, 150, 243, 0.05) 100%);
     --tile-heating-bg: linear-gradient(135deg, rgba(255, 87, 34, 0.2) 0%, rgba(255, 87, 34, 0.1) 100%);
     --tile-cooling-bg: linear-gradient(135deg, rgba(3, 169, 244, 0.2) 0%, rgba(3, 169, 244, 0.1) 100%);
-    --tile-sensor-bg:  linear-gradient(135deg, rgba(156, 39, 176, 0.15) 0%, rgba(156, 39, 176, 0.05) 100%);
-    --tile-spotify-bg: linear-gradient(135deg, rgba(30, 215, 96, 0.15) 0%, rgba(29, 185, 84, 0.05) 100%);
+    --tile-sensor-bg:       linear-gradient(135deg, rgba(156, 39, 176, 0.15) 0%, rgba(156, 39, 176, 0.05) 100%);
+    --tile-spotify-bg:      linear-gradient(135deg, rgba(30, 215, 96, 0.15) 0%, rgba(29, 185, 84, 0.05) 100%);
 }
 
 * {
@@ -394,6 +394,16 @@ body {
 
 .tile.cover.on .tile-icon {
     color: #4caf50;
+}
+
+.tile.lock .tile-icon,
+.tile.lock .tile-state {
+    color: #4caf50;
+}
+
+.tile.lock.on .tile-icon,
+.tile.lock.on .tile-state {
+    color: #ef5350;
 }
 
 .tile.sensor {
