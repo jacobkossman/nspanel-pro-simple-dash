@@ -19,6 +19,9 @@
     --tile-label-size: 14px;
     --tile-state-size: 10px;
 
+    /* Modal */
+    --modal-width: 380px;
+
     /* Tile state backgrounds */
     --tile-on-bg:      linear-gradient(135deg, rgba(66, 165, 245, 0.15) 0%, rgba(33, 150, 243, 0.05) 100%);
     --tile-climate-bg: linear-gradient(135deg, rgba(33, 150, 243, 0.15) 0%, rgba(33, 150, 243, 0.05) 100%);

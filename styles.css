@@ -16,6 +16,9 @@
     --tile-label-size:  14px;
     --tile-state-size:  10px;
 
+    /* Modal */
+    --modal-width: 380px;
+
     /* Tile state gradients — swap to a flat color, e.g. --tile-on-bg: rgba(66,165,245,0.15) */
     --tile-on-bg:      linear-gradient(135deg, rgba(66, 165, 245, 0.15) 0%, rgba(33, 150, 243, 0.05) 100%);
     --tile-climate-bg: linear-gradient(135deg, rgba(33, 150, 243, 0.15) 0%, rgba(33, 150, 243, 0.05) 100%);
@@ -1389,7 +1392,7 @@ body {
     background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 20px;
-    width: 380px;
+    width: var(--modal-width);
     max-width: 90%;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     overflow: hidden;
