@@ -14,6 +14,7 @@ services:
       - ./styles.css:/usr/share/nginx/html/styles.css:ro
       - ./app.js:/usr/share/nginx/html/app.js:ro
       - ./api.php:/usr/share/nginx/html/api.php:ro
+      - ./custom.css:/usr/share/nginx/html/custom.css:ro
       - simpledash-data:/data
     restart: unless-stopped
 
