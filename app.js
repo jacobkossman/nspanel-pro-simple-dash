@@ -921,8 +921,13 @@ function openHeaderClimateModal() {
 }
 
 function applyTileSize(tile, entity) {
-    if (entity.tileColSpan && entity.tileColSpan > 1) {
-        tile.style.gridColumn = `span ${entity.tileColSpan}`;
+    const colSpan = entity.tileColSpan || 1;
+    tile.dataset.width = colSpan;
+    tile.dataset.height = entity.tileHeight === 'half' ? 'half' : 'full';
+    if (colSpan >= (config.gridColumns || 2)) tile.dataset.fullWidth = 'true';
+
+    if (colSpan > 1) {
+        tile.style.gridColumn = `span ${colSpan}`;
     }
     if (entity.tileHeight === 'half') tile.classList.add('tile-half-height');
 }

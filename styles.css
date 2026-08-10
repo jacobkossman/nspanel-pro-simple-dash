@@ -17,6 +17,16 @@
     --tile-label-size:  14px;
     --tile-state-size:  10px;
 
+    /* Clock tile — sized in container query height units (% of the tile's own
+       rendered height) so the font scales with tile height automatically,
+       however many grid rows the room is configured with */
+    --clock-time-size:                         29cqh;
+    --clock-time-size--full-width:             42cqh;
+    --clock-time-size--half-height:            56cqh;
+    --clock-time-size--full-width-half-height: 74cqh;
+    --clock-date-size:             9cqh;
+    --clock-date-size--full-width: 11cqh;
+
     /* Modal */
     --modal-width: 380px;
 
@@ -431,6 +441,7 @@ body {
 }
 
 .tile.clock {
+    container-type: size;
     background: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.1);
     cursor: default;
@@ -440,20 +451,36 @@ body {
 }
 
 .clock-time {
-    font-size: 32px;
+    font-size: clamp(16px, var(--clock-time-size), 64px);
     font-weight: 200;
     letter-spacing: -0.5px;
     margin: 4px 0;
     line-height: 1;
 }
 
+.tile.clock[data-full-width] .clock-time {
+    font-size: clamp(20px, var(--clock-time-size--full-width), 72px);
+}
+
+.tile.clock[data-height="half"] .clock-time {
+    font-size: clamp(14px, var(--clock-time-size--half-height), 36px);
+}
+
+.tile.clock[data-full-width][data-height="half"] .clock-time {
+    font-size: clamp(16px, var(--clock-time-size--full-width-half-height), 44px);
+}
+
 .clock-date {
-    font-size: 11px;
+    font-size: clamp(9px, var(--clock-date-size), 15px);
     font-weight: 400;
     opacity: 0.6;
     text-transform: uppercase;
     letter-spacing: 0.8px;
     margin-top: 4px;
+}
+
+.tile.clock[data-full-width] .clock-date {
+    font-size: clamp(10px, var(--clock-date-size--full-width), 17px);
 }
 
 .weather-icon {
@@ -905,6 +932,10 @@ body {
 .tile.tile-half-height.sensor,
 .tile.tile-half-height.climate {
     justify-content: space-between;
+}
+
+.tile.tile-half-height.clock {
+    column-gap: 12px;
 }
 
 .tile.assistant-command {
