@@ -1067,7 +1067,7 @@ function createSpotifyPlaylistTile(entity) {
 
 function createClockTile(entity) {
     const tile = document.createElement('div');
-    tile.className = 'tile clock';
+    tile.className = 'tile clock no-tap';
 
     const now = new Date();
 
@@ -1547,7 +1547,7 @@ function createClimateTile(entity, state) {
 
 function createSensorTile(entity, state) {
     const tile = document.createElement('div');
-    tile.className = 'tile sensor';
+    tile.className = 'tile sensor no-tap';
 
     const isUnavailable = !state || state.state === 'unavailable';
     
