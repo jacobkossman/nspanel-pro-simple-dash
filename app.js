@@ -20,6 +20,7 @@ const DEFAULT_GLOBAL_CONFIG = {
     assistantEntity: '', // Google Assistant SDK entity
     disableBuiltInScreensaver: false,
     screensaverTimeout: 10, // seconds
+    screensaverTimeFormat: '24h', // '24h' or '12h'
     hideVoiceMessages: false,
     deviceModel: 'pro',
     fontFamily: 'Inter'
@@ -914,7 +915,12 @@ function createTile(entity, state) {
     if (domain === 'spotify_playlist') {
         return createSpotifyPlaylistTile(entity);
     }
-    
+
+    // Handle clock tiles
+    if (domain === 'clock') {
+        return createClockTile(entity);
+    }
+
     // Handle different entity types
     if (domain === 'climate') {
         return createClimateTile(entity, state);
@@ -1028,6 +1034,27 @@ function createSpotifyPlaylistTile(entity) {
     tile.appendChild(content);
 
     tile.onclick = () => playSpotifyPlaylistOnRoomDevice(entity.playlistUrl);
+
+    return tile;
+}
+
+function createClockTile(entity) {
+    const tile = document.createElement('div');
+    tile.className = 'tile clock';
+
+    const now = new Date();
+
+    const timeDisplay = document.createElement('div');
+    timeDisplay.className = 'clock-time';
+    timeDisplay.textContent = formatClockTime(now, entity.clockTimeFormat);
+    tile.appendChild(timeDisplay);
+
+    if (!entity.hideClockDate) {
+        const dateDisplay = document.createElement('div');
+        dateDisplay.className = 'clock-date';
+        dateDisplay.textContent = now.toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' });
+        tile.appendChild(dateDisplay);
+    }
 
     return tile;
 }
@@ -1956,14 +1983,24 @@ function exitScreensaver() {
     resetInactivityTimer();
 }
 
+function formatClockTime(date, formatOverride) {
+    const format = formatOverride || globalConfig?.screensaverTimeFormat;
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    if (format === '12h') {
+        const hours12 = date.getHours() % 12 || 12;
+        const ampm = date.getHours() < 12 ? 'AM' : 'PM';
+        return `${hours12}:${minutes} ${ampm}`;
+    }
+    const hours = String(date.getHours()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+}
+
 function updateScreensaverClock() {
     const now = new Date();
-    
+
     // Time
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    document.getElementById('screensaverTime').textContent = `${hours}:${minutes}`;
-    
+    document.getElementById('screensaverTime').textContent = formatClockTime(now);
+
     // Date
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -2210,6 +2247,14 @@ function showGlobalSettings() {
                 <small style="color: #888; font-size: 12px;">Time of inactivity before screensaver activates (5–300 seconds)</small>
             </div>
             <div class="form-group">
+                <label class="form-label">Time Format</label>
+                <select class="form-input" id="screensaverTimeFormatInput">
+                    <option value="24h" ${(globalConfig.screensaverTimeFormat || '24h') === '24h' ? 'selected' : ''}>24-hour</option>
+                    <option value="12h" ${globalConfig.screensaverTimeFormat === '12h' ? 'selected' : ''}>12-hour (AM/PM)</option>
+                </select>
+                <small style="color: #888; font-size: 12px;">Also used by clock tiles</small>
+            </div>
+            <div class="form-group">
                 <label class="form-label">Temperature Entity (Optional)</label>
                 <input type="text" class="form-input" id="screensaverTempEntityInput" placeholder="sensor.outdoor_temperature" value="${globalConfig.screensaverTempEntity || ''}">
                 <small style="color: #888; font-size: 12px;">Sensor shown on screensaver</small>
@@ -2383,6 +2428,7 @@ function showRoomEditor(mode, roomIdx) {
     roomData.entities.forEach((entity, index) => {
         const item = document.createElement('div');
         item.className = 'entity-item';
+        const displayLabel = entity.label || (entity.id.startsWith('clock.') ? 'Clock' : entity.id);
         item.innerHTML = `
             <div style="display: flex; gap: 8px; align-items: center;">
                 <div style="display: flex; flex-direction: column; gap: 4px;">
@@ -2390,7 +2436,7 @@ function showRoomEditor(mode, roomIdx) {
                     <button class="reorder-btn" onclick="moveEntityDown(${index})" ${index === roomData.entities.length - 1 ? 'disabled' : ''}>arrow_downward</button>
                 </div>
                 <div>
-                    <strong>${entity.label}</strong><br>
+                    <strong>${displayLabel}</strong><br>
                     <small style="color: #888;">${entity.id}</small>
                 </div>
             </div>
@@ -2517,6 +2563,7 @@ async function saveGlobalSettings() {
     globalConfig.hideRoomName = headerDisplay === 'no-name';
     globalConfig.hideHeader = headerDisplay === 'hidden';
     globalConfig.screensaverTimeout = parseInt(document.getElementById('screensaverTimeoutInput').value) || 10;
+    globalConfig.screensaverTimeFormat = document.getElementById('screensaverTimeFormatInput').value;
     globalConfig.screensaverTempEntity = document.getElementById('screensaverTempEntityInput').value.trim();
     globalConfig.screensaverWeather = document.getElementById('screensaverWeatherEntityInput').value.trim();
 
@@ -2666,10 +2713,16 @@ let editingEntityIndex = null;
 
 function updateEntityFormForDomain() {
     const domain = document.getElementById('newEntityDomain').value;
-    document.getElementById('entityOptHideState').style.display = domain === 'weather' ? 'none' : 'block';
+    const isClock = domain === 'clock';
+    document.getElementById('entityOptEntityId').style.display = isClock ? 'none' : 'flex';
+    document.getElementById('entityOptLabel').style.display = isClock ? 'none' : 'flex';
+    document.getElementById('entityOptIcon').style.display = isClock ? 'none' : 'flex';
+    document.getElementById('entityOptHideState').style.display = (domain === 'weather' || isClock) ? 'none' : 'block';
+    document.getElementById('entityOptDisableAction').style.display = isClock ? 'none' : 'block';
     document.getElementById('entityOptLight').style.display = domain === 'light' ? 'block' : 'none';
     document.getElementById('entityOptSensor').style.display = domain === 'sensor' ? 'flex' : 'none';
     document.getElementById('entityOptWeather').style.display = domain === 'weather' ? 'flex' : 'none';
+    document.getElementById('entityOptClock').style.display = isClock ? 'flex' : 'none';
 
     // Inline forecast needs vertical room, so it's unavailable on half-height tiles
     const isHalfHeight = document.getElementById('newEntityTileHeight').value === 'half';
@@ -2697,7 +2750,7 @@ function openEntityModal(index) {
 
         document.getElementById('newEntityDomain').value = domain;
         document.getElementById('newEntityId').value = rawId;
-        document.getElementById('newEntityLabel').value = entity.label;
+        document.getElementById('newEntityLabel').value = entity.label || '';
         document.getElementById('newEntityIcon').value = entity.icon || '';
         document.getElementById('selectedIconPreview').textContent = entity.icon || 'search';
         document.getElementById('selectedIconName').textContent = entity.icon || 'Choose icon';
@@ -2712,6 +2765,8 @@ function openEntityModal(index) {
         document.getElementById('newEntityModalForecastType').value = entity.modalForecastType || 'hourly';
         document.getElementById('newEntityTileForecastType').value = entity.tileForecastType || 'daily';
         document.getElementById('newEntityTileHeight').value = entity.tileHeight || 'normal';
+        document.getElementById('newEntityHideClockDate').checked = entity.hideClockDate || false;
+        document.getElementById('newEntityClockFormat').value = entity.clockTimeFormat || '';
     } else {
         document.getElementById('newEntityDomain').value = 'light';
         document.getElementById('newEntityId').value = '';
@@ -2730,6 +2785,8 @@ function openEntityModal(index) {
         document.getElementById('newEntityModalForecastType').value = 'hourly';
         document.getElementById('newEntityTileForecastType').value = 'daily';
         document.getElementById('newEntityTileHeight').value = 'normal';
+        document.getElementById('newEntityHideClockDate').checked = false;
+        document.getElementById('newEntityClockFormat').value = '';
     }
 
     // Populate width options based on current room column count
@@ -2758,12 +2815,14 @@ function closeEntityModal(event) {
 
 function saveEntityModal() {
     const domain = document.getElementById('newEntityDomain').value;
-    const rawId = document.getElementById('newEntityId').value.trim();
+    let rawId = document.getElementById('newEntityId').value.trim();
     const label = document.getElementById('newEntityLabel').value.trim();
     const icon = document.getElementById('newEntityIcon').value.trim();
     const hideState = document.getElementById('newEntityHideState').checked;
 
-    if (!rawId || !label) {
+    if (domain === 'clock') {
+        if (!rawId) rawId = `clock_${Date.now()}`;
+    } else if (!rawId || !label) {
         showError('Please enter both entity ID and label');
         return;
     }
@@ -2774,7 +2833,8 @@ function saveEntityModal() {
 
     if (!window.editingRoomData) window.editingRoomData = { entities: [] };
 
-    const entity = { id: `${domain}.${rawId}`, label };
+    const entity = { id: `${domain}.${rawId}` };
+    if (label) entity.label = label;
     if (icon) entity.icon = icon;
     if (hideState) entity.hideState = true;
     if (document.getElementById('newEntityDisableAction').checked) entity.disableAction = true;
@@ -2782,6 +2842,11 @@ function saveEntityModal() {
     if (domain === 'sensor') {
         const decimalsRaw = document.getElementById('newEntityDecimals').value;
         if (decimalsRaw !== '') entity.decimals = parseInt(decimalsRaw);
+    }
+    if (domain === 'clock') {
+        if (document.getElementById('newEntityHideClockDate').checked) entity.hideClockDate = true;
+        const clockFormat = document.getElementById('newEntityClockFormat').value;
+        if (clockFormat) entity.clockTimeFormat = clockFormat;
     }
     if (domain === 'weather') {
         if (document.getElementById('newEntityHideWeatherName').checked) entity.hideWeatherName = true;
@@ -2830,6 +2895,7 @@ function refreshEntityList() {
 
         const iconText = entity.icon ? `<span style="font-family: 'Material Symbols Outlined'; font-size: 14px; color: #42a5f5; margin-right: 4px;">${entity.icon}</span>` : '';
         const hideStateText = entity.hideState ? '<span style="font-size: 10px; color: #888; margin-left: 8px;">[Hidden]</span>' : '';
+        const displayLabel = entity.label || (entity.id.startsWith('clock.') ? 'Clock' : entity.id);
 
         item.innerHTML = `
             <div style="display: flex; gap: 8px; align-items: center;">
@@ -2838,7 +2904,7 @@ function refreshEntityList() {
                     <button class="reorder-btn" onclick="moveEntityDown(${idx})" ${idx === window.editingRoomData.entities.length - 1 ? 'disabled' : ''}>arrow_downward</button>
                 </div>
                 <div>
-                    <div>${iconText}<strong>${entity.label}</strong>${hideStateText}</div>
+                    <div>${iconText}<strong>${displayLabel}</strong>${hideStateText}</div>
                     <small style="color: #888;">${entity.id}</small>
                 </div>
             </div>
