@@ -2124,7 +2124,14 @@ function openAdmin() {
     // Show room selector if HA is already configured, initial setup only if not
     if (config || (globalConfig && globalConfig.haToken)) {
         showRoomManager();
+    } else if (globalConfig && globalConfig.haToken && roomConfigs.length > 0) {
+        // Global config exists and rooms are configured, just need to pick a room
+        showRoomManager();
+    } else if (globalConfig && globalConfig.haToken) {
+        // Have credentials but no rooms yet, skip to room creation
+        showRoomEditor('new');
     } else {
+        // Truly first time, need HA URL and token
         showInitialSetup();
     }
 }
