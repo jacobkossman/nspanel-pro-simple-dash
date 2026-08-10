@@ -3096,7 +3096,7 @@ function openClimateModal(entityId) {
     hvacModes.forEach(mode => {
         const btn = document.createElement('button');
         btn.className = 'climate-mode-btn';
-        btn.textContent = mode;
+        btn.textContent = mode === 'heat_cool' ? 'heat/cool' : mode;
         
         if (mode === currentMode) {
             btn.classList.add('active', mode);
