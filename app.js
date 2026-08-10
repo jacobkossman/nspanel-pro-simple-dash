@@ -126,6 +126,33 @@ const WEATHER_ICONS = {
     'exceptional': 'warning'
 };
 
+const WEATHER_CONDITION_LABELS = {
+    'clear-night': 'Clear',
+    'cloudy': 'Cloudy',
+    'fog': 'Fog',
+    'hail': 'Hail',
+    'lightning': 'Lightning',
+    'lightning-rainy': 'Lightning, Rainy',
+    'partlycloudy': 'Partly Cloudy',
+    'pouring': 'Pouring',
+    'rainy': 'Rainy',
+    'snowy': 'Snowy',
+    'snowy-rainy': 'Snowy, Rainy',
+    'sunny': 'Sunny',
+    'windy': 'Windy',
+    'windy-variant': 'Windy',
+    'exceptional': 'Exceptional'
+};
+
+// Format a Home Assistant weather condition string for display (e.g. "partlycloudy" -> "Partly Cloudy")
+function formatWeatherCondition(state) {
+    if (!state) return 'Unknown';
+    return WEATHER_CONDITION_LABELS[state] || state
+        .replace(/-/g, ' ')
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/\b\w/g, c => c.toUpperCase());
+}
+
 async function loadConfig() {
     try {
         // Get device-specific identifier (use IP or generate unique ID)
@@ -1589,7 +1616,7 @@ function createWeatherTile(entity, state) {
 
     const condition = document.createElement('div');
     condition.className = 'weather-condition';
-    condition.textContent = state?.state ? state.state.replace('-', ' ').toUpperCase() : 'UNKNOWN';
+    condition.textContent = state?.state ? formatWeatherCondition(state.state).toUpperCase() : 'UNKNOWN';
 
     content.appendChild(tempDisplay);
     content.appendChild(condition);
@@ -2061,12 +2088,7 @@ function updateScreensaverClock() {
             weatherTemp.textContent = `${temp}${unit}`;
         }
         
-        // Format condition with spaces (partlycloudy -> partly cloudy)
-        const condition = weatherState.state
-            .replace(/-/g, ' ')
-            .replace(/([a-z])([A-Z])/g, '$1 $2')
-            .toLowerCase();
-        weatherCondition.textContent = condition;
+        weatherCondition.textContent = formatWeatherCondition(weatherState.state);
         weatherElement.style.display = 'flex';
     } else {
         weatherElement.style.display = 'none';
@@ -3292,7 +3314,7 @@ async function openWeatherForecast(entityId) {
     const currentWeather = document.getElementById('weatherCurrent');
     const temp = state.attributes.temperature;
     const unit = state.attributes.temperature_unit || '°C';
-    const condition = state.state.replace('-', ' ');
+    const condition = formatWeatherCondition(state.state);
     const icon = WEATHER_ICONS[state.state] || 'cloud';
     
     currentWeather.innerHTML = `
