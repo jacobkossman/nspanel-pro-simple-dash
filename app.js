@@ -1570,10 +1570,12 @@ function createWeatherTile(entity, state) {
 
     if (entity.showInlineForecast && entity.tileHeight !== 'half') {
         tile.dataset.entityId = entity.id;
-        if (forecastCache[entity.id]?.length > 0) {
-            renderInlineForecastStrip(tile, forecastCache[entity.id]);
+        const tileForecastType = entity.tileForecastType || 'daily';
+        const cached = forecastCache[entity.id];
+        if (cached?.type === tileForecastType && cached.data.length > 0) {
+            renderInlineForecastStrip(tile, cached.data, tileForecastType);
         } else {
-            fetchInlineForecast(entity.id);
+            fetchInlineForecast(entity.id, tileForecastType);
         }
     }
 
@@ -2677,6 +2679,10 @@ function updateEntityFormForDomain() {
     const inlineForecastLabel = inlineForecastCheckbox.closest('label');
     inlineForecastLabel.style.opacity = isHalfHeight ? '0.4' : '1';
     inlineForecastLabel.style.cursor = isHalfHeight ? 'default' : 'pointer';
+
+    const tileForecastTypeSelect = document.getElementById('newEntityTileForecastType');
+    tileForecastTypeSelect.disabled = isHalfHeight;
+    tileForecastTypeSelect.style.opacity = isHalfHeight ? '0.4' : '1';
 }
 
 function openEntityModal(index) {
@@ -2703,6 +2709,8 @@ function openEntityModal(index) {
         document.getElementById('newEntityHideWeatherIcon').checked = entity.hideWeatherIcon || false;
         document.getElementById('newEntityHideWeatherForecast').checked = entity.hideWeatherForecast || false;
         document.getElementById('newEntityShowInlineForecast').checked = entity.showInlineForecast || false;
+        document.getElementById('newEntityModalForecastType').value = entity.modalForecastType || 'hourly';
+        document.getElementById('newEntityTileForecastType').value = entity.tileForecastType || 'daily';
         document.getElementById('newEntityTileHeight').value = entity.tileHeight || 'normal';
     } else {
         document.getElementById('newEntityDomain').value = 'light';
@@ -2719,6 +2727,8 @@ function openEntityModal(index) {
         document.getElementById('newEntityHideWeatherIcon').checked = false;
         document.getElementById('newEntityHideWeatherForecast').checked = false;
         document.getElementById('newEntityShowInlineForecast').checked = false;
+        document.getElementById('newEntityModalForecastType').value = 'hourly';
+        document.getElementById('newEntityTileForecastType').value = 'daily';
         document.getElementById('newEntityTileHeight').value = 'normal';
     }
 
@@ -2778,13 +2788,20 @@ function saveEntityModal() {
         if (document.getElementById('newEntityHideWeatherIcon').checked) entity.hideWeatherIcon = true;
         if (document.getElementById('newEntityHideWeatherForecast').checked) entity.hideWeatherForecast = true;
         if (document.getElementById('newEntityShowInlineForecast').checked) entity.showInlineForecast = true;
+        const modalForecastType = document.getElementById('newEntityModalForecastType').value;
+        if (modalForecastType && modalForecastType !== 'hourly') entity.modalForecastType = modalForecastType;
+        const tileForecastType = document.getElementById('newEntityTileForecastType').value;
+        if (tileForecastType && tileForecastType !== 'daily') entity.tileForecastType = tileForecastType;
     }
 
     const tileColSpan = parseInt(document.getElementById('newEntityTileWidth').value);
     const tileHeight = document.getElementById('newEntityTileHeight').value;
     if (tileColSpan && tileColSpan > 1) entity.tileColSpan = tileColSpan;
     if (tileHeight && tileHeight !== 'normal') entity.tileHeight = tileHeight;
-    if (tileHeight === 'half') delete entity.showInlineForecast;
+    if (tileHeight === 'half') {
+        delete entity.showInlineForecast;
+        delete entity.tileForecastType;
+    }
 
     if (editingEntityIndex !== null) {
         window.editingRoomData.entities.splice(editingEntityIndex, 1, entity);
@@ -3149,21 +3166,23 @@ async function setClimateMode(entityId, mode) {
 // ============================================
 // WEATHER FORECAST MODAL
 // ============================================
-function renderInlineForecastStrip(tile, forecast) {
+function renderInlineForecastStrip(tile, forecast, forecastType = 'daily') {
     const existing = tile.querySelector('.weather-forecast-strip');
     if (existing) existing.remove();
     const strip = document.createElement('div');
     strip.className = 'weather-forecast-strip';
-    forecast.slice(0, 4).forEach(day => {
-        const dt = new Date(day.datetime);
-        const dayName = dt.toLocaleDateString('en', { weekday: 'short' });
-        const icon = WEATHER_ICONS[day.condition] || 'cloud';
-        const temp = day.temperature !== undefined ? `${Math.round(day.temperature)}°` : '—';
+    forecast.slice(0, 4).forEach(period => {
+        const dt = new Date(period.datetime);
+        const label = forecastType === 'hourly'
+            ? dt.toLocaleTimeString('en', { hour: 'numeric' })
+            : dt.toLocaleDateString('en', { weekday: 'short' });
+        const icon = WEATHER_ICONS[period.condition] || 'cloud';
+        const temp = period.temperature !== undefined ? `${Math.round(period.temperature)}°` : '—';
         const item = document.createElement('div');
         item.className = 'weather-forecast-item';
         item.innerHTML = `
             <span class="material-symbols-outlined weather-forecast-icon">${icon}</span>
-            <span class="weather-forecast-day">${dayName}</span>
+            <span class="weather-forecast-day">${label}</span>
             <span class="weather-forecast-temp">${temp}</span>
         `;
         strip.appendChild(item);
@@ -3171,11 +3190,11 @@ function renderInlineForecastStrip(tile, forecast) {
     tile.appendChild(strip);
 }
 
-async function fetchInlineForecast(entityId) {
+async function fetchInlineForecast(entityId, forecastType = 'daily') {
     try {
         const response = await callHA('services/weather/get_forecasts?return_response=true', 'POST', {
             entity_id: entityId,
-            type: 'daily'
+            type: forecastType
         });
         let data = [];
         if (response.service_response?.[entityId]?.forecast) data = response.service_response[entityId].forecast;
@@ -3184,9 +3203,9 @@ async function fetchInlineForecast(entityId) {
         else if (Array.isArray(response)) data = response;
 
         if (data.length > 0) {
-            forecastCache[entityId] = data;
+            forecastCache[entityId] = { type: forecastType, data };
             const liveTile = document.querySelector(`[data-entity-id="${entityId}"]`);
-            if (liveTile) renderInlineForecastStrip(liveTile, data);
+            if (liveTile) renderInlineForecastStrip(liveTile, data, forecastType);
         }
     } catch (e) {
         // Forecast unavailable — strip stays hidden
@@ -3223,12 +3242,14 @@ async function openWeatherForecast(entityId) {
     forecastList.innerHTML = '<div style="text-align: center; padding: 20px; color: rgba(255, 255, 255, 0.5);">Loading forecast...</div>';
     
     modal.classList.add('active');
-    
+
+    const modalForecastType = entity?.modalForecastType || 'hourly';
+
     // Fetch forecast data using weather.get_forecasts service
     try {
         const forecastResponse = await callHA('services/weather/get_forecasts?return_response=true', 'POST', {
             entity_id: entityId,
-            type: 'hourly'
+            type: modalForecastType
         });
         
         console.log('Forecast response:', forecastResponse);
@@ -3267,30 +3288,34 @@ async function openWeatherForecast(entityId) {
             forecastData.slice(0, 5).forEach(item => {
                 const forecastItem = document.createElement('div');
                 forecastItem.className = 'weather-forecast-item';
-                
+
                 // Format datetime
                 const date = new Date(item.datetime);
                 const now = new Date();
                 const isToday = date.toDateString() === now.toDateString();
                 const isTomorrow = date.toDateString() === new Date(now.getTime() + 86400000).toDateString();
-                
+                const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
                 let timeStr;
-                if (isToday) {
+                if (modalForecastType === 'daily') {
+                    timeStr = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : days[date.getDay()];
+                } else if (isToday) {
                     timeStr = `Today ${date.getHours()}:00`;
                 } else if (isTomorrow) {
                     timeStr = `Tomorrow ${date.getHours()}:00`;
                 } else {
-                    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
                     timeStr = `${days[date.getDay()]} ${date.getHours()}:00`;
                 }
-                
+
                 const forecastIcon = WEATHER_ICONS[item.condition] || 'cloud';
-                const forecastTemp = Math.round(item.temperature);
-                
+                const forecastTemp = modalForecastType === 'daily' && item.templow !== undefined
+                    ? `${Math.round(item.temperature)}° / ${Math.round(item.templow)}°`
+                    : `${Math.round(item.temperature)}${unit}`;
+
                 forecastItem.innerHTML = `
                     <div class="weather-forecast-time">${timeStr}</div>
                     <div class="weather-forecast-icon">${forecastIcon}</div>
-                    <div class="weather-forecast-temp">${forecastTemp}${unit}</div>
+                    <div class="weather-forecast-temp">${forecastTemp}</div>
                 `;
                 
                 forecastList.appendChild(forecastItem);

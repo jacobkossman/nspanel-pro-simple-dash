@@ -121,7 +121,9 @@ Leaving the room editor with unsaved changes prompts a confirmation before disca
 - **Decimals** (`sensor` only) — 0–3 fixed decimal places
 - **Hide weather name / icon / forecast** (`weather` only)
 - **Full-width row layout** (`weather` only) — icon-left, content-right instead of a square tile
-- **Show inline forecast strip** (`weather` only) — adds a 4-day forecast row below the tile
+- **Popup forecast type** (`weather` only) — daily or hourly periods in the tap-to-open forecast modal (default hourly)
+- **Show inline forecast strip** (`weather` only) — adds a forecast row below the tile
+- **Tile forecast type** (`weather` only) — daily or hourly periods in the inline strip (default daily)
 
 ### Global Settings
 

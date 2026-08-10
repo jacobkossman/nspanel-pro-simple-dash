@@ -1647,6 +1647,7 @@ body {
     font-weight: 500;
     min-width: 40px;
     text-align: right;
+    white-space: nowrap;
 }
 
 /* Icon Picker */
