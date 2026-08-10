@@ -25,19 +25,66 @@ const DEFAULT_GLOBAL_CONFIG = {
     fontFamily: 'Inter'
 };
 
-const ENTITIES_PER_PAGE = 4;
+// Split entities into pages by simulating the grid's row-major auto-placement
+// (mirrors CSS Grid's sparse packing), so tiles with a configured width/height
+// other than 1x1 are accounted for and a page never overflows its reserved rows.
+function paginateEntities(items, gridColumns, gridRows) {
+    const maxRows = gridRows * 2; // physical row-tracks per page (half-height units)
+    const pages = [];
+    let page = [];
+    let occupied = new Set();
+    let cursorRow = 0;
+    let cursorCol = 0;
 
-// Get entities per page from config
-function getEntitiesPerPage() {
-    if (!config) return ENTITIES_PER_PAGE;
-    const cols = config.gridColumns || 2;
-    const rows = config.gridRows || 2;
-    return cols * rows;
-}
-function getEntitiesPerPage() {
-    const cols = config.gridColumns || 2;
-    const rows = config.gridRows || 2;
-    return cols * rows;
+    const fits = (row, col, colSpan, rowSpan) => {
+        if (col + colSpan > gridColumns || row + rowSpan > maxRows) return false;
+        for (let r = row; r < row + rowSpan; r++) {
+            for (let c = col; c < col + colSpan; c++) {
+                if (occupied.has(`${r},${c}`)) return false;
+            }
+        }
+        return true;
+    };
+
+    const place = (row, col, colSpan, rowSpan) => {
+        for (let r = row; r < row + rowSpan; r++) {
+            for (let c = col; c < col + colSpan; c++) {
+                occupied.add(`${r},${c}`);
+            }
+        }
+    };
+
+    const findSlot = (startRow, startCol, colSpan, rowSpan) => {
+        let row = startRow, col = startCol;
+        while (row < maxRows) {
+            if (fits(row, col, colSpan, rowSpan)) return { row, col };
+            col++;
+            if (col >= gridColumns) { col = 0; row++; }
+        }
+        return null;
+    };
+
+    for (const item of items) {
+        const colSpan = Math.min(item.tileColSpan || 1, gridColumns);
+        const rowSpan = item.tileHeight === 'half' ? 1 : 2;
+
+        let slot = findSlot(cursorRow, cursorCol, colSpan, rowSpan);
+        if (!slot) {
+            if (page.length) pages.push(page);
+            page = [];
+            occupied = new Set();
+            slot = findSlot(0, 0, colSpan, rowSpan) || { row: 0, col: 0 };
+        }
+
+        place(slot.row, slot.col, colSpan, rowSpan);
+        page.push(item);
+        cursorRow = slot.row;
+        cursorCol = slot.col + colSpan;
+        if (cursorCol >= gridColumns) { cursorCol = 0; cursorRow++; }
+    }
+
+    if (page.length) pages.push(page);
+    return pages;
 }
 
 // ============================================
@@ -284,12 +331,11 @@ function renderPages() {
     
     const allRegularItems = [...regularEntities, ...assistantCommandTiles, ...spotifyPlaylistTiles];
 
-    const entitiesPerPage = getEntitiesPerPage();
-    const totalPages = Math.ceil(allRegularItems.length / entitiesPerPage);
-
     // Set grid layout
     const gridColumns = config.gridColumns || 2;
     const gridRows = config.gridRows || 2;
+    const regularPages = paginateEntities(allRegularItems, gridColumns, gridRows);
+    const totalPages = regularPages.length;
 
     // Create regular entity pages
     for (let i = 0; i < totalPages; i++) {
@@ -313,15 +359,12 @@ function renderPages() {
         const grid = document.createElement('div');
         grid.className = 'grid';
         grid.style.gridTemplateColumns = `repeat(${gridColumns}, 1fr)`;
-        grid.style.gridTemplateRows = `repeat(${gridRows}, 1fr)`;
+        grid.style.gridTemplateRows = `repeat(${gridRows * 2}, 1fr)`;
 
-        const startIdx = i * entitiesPerPage;
-        const endIdx = Math.min(startIdx + entitiesPerPage, allRegularItems.length);
-        
-        for (let j = startIdx; j < endIdx; j++) {
-            const entity = allRegularItems[j];
+        for (const entity of regularPages[i]) {
             const state = entityStates[entity.id];
             const tile = createTile(entity, state);
+            applyTileSize(tile, entity);
             grid.appendChild(tile);
         }
 
@@ -789,8 +832,9 @@ function goToMediaPage() {
         icon: playlist.icon || 'queue_music'
     }));
     const allRegularItems = [...regularEntities, ...assistantCommandTiles, ...spotifyPlaylistTiles];
-    const entitiesPerPage = getEntitiesPerPage();
-    const totalRegularPages = Math.ceil(allRegularItems.length / entitiesPerPage);
+    const gridColumns = config.gridColumns || 2;
+    const gridRows = config.gridRows || 2;
+    const totalRegularPages = paginateEntities(allRegularItems, gridColumns, gridRows).length;
     goToPage(totalRegularPages);
 }
 
@@ -846,6 +890,13 @@ function openHeaderClimateModal() {
     if (domain === 'climate') {
         openClimateModal(config.headerTempEntity);
     }
+}
+
+function applyTileSize(tile, entity) {
+    if (entity.tileColSpan && entity.tileColSpan > 1) {
+        tile.style.gridColumn = `span ${entity.tileColSpan}`;
+    }
+    if (entity.tileHeight === 'half') tile.classList.add('tile-half-height');
 }
 
 function createTile(entity, state) {
@@ -1480,7 +1531,7 @@ function createWeatherTile(entity, state) {
 
     const isUnavailable = !state || state.state === 'unavailable';
     if (isUnavailable) tile.classList.add('unavailable');
-    if (entity.weatherFullRow) tile.classList.add('full-row');
+    if (entity.tileColSpan > 1) tile.classList.add('full-row');
 
     if (!entity.hideWeatherIcon) {
         const icon = document.createElement('div');
@@ -1517,7 +1568,7 @@ function createWeatherTile(entity, state) {
     content.appendChild(condition);
     tile.appendChild(content);
 
-    if (entity.showInlineForecast) {
+    if (entity.showInlineForecast && entity.tileHeight !== 'half') {
         tile.dataset.entityId = entity.id;
         if (forecastCache[entity.id]?.length > 0) {
             renderInlineForecastStrip(tile, forecastCache[entity.id]);
@@ -1779,8 +1830,14 @@ function goToPage(pageIndex) {
         label: cmd.label,
         command: cmd.command
     }));
-    const allRegularItems = [...regularEntities, ...assistantCommandTiles];
-    const totalRegularPages = Math.ceil(allRegularItems.length / ENTITIES_PER_PAGE);
+    const spotifyPlaylistTiles = (config.spotifyPlaylists || []).map(playlist => ({
+        id: `spotify_playlist.${playlist.label.toLowerCase().replace(/\s+/g, '_')}`,
+        label: playlist.label,
+        playlistUrl: playlist.playlistUrl,
+        icon: playlist.icon || 'queue_music'
+    }));
+    const allRegularItems = [...regularEntities, ...assistantCommandTiles, ...spotifyPlaylistTiles];
+    const totalRegularPages = paginateEntities(allRegularItems, config.gridColumns || 2, config.gridRows || 2).length;
     const totalPages = totalRegularPages + (mediaPlayers.length > 0 ? 1 : 0);
     
     currentPage = Math.max(0, Math.min(pageIndex, totalPages - 1));
@@ -1811,8 +1868,14 @@ function nextPage() {
         label: cmd.label,
         command: cmd.command
     }));
-    const allRegularItems = [...regularEntities, ...assistantCommandTiles];
-    const totalRegularPages = Math.ceil(allRegularItems.length / ENTITIES_PER_PAGE);
+    const spotifyPlaylistTiles = (config.spotifyPlaylists || []).map(playlist => ({
+        id: `spotify_playlist.${playlist.label.toLowerCase().replace(/\s+/g, '_')}`,
+        label: playlist.label,
+        playlistUrl: playlist.playlistUrl,
+        icon: playlist.icon || 'queue_music'
+    }));
+    const allRegularItems = [...regularEntities, ...assistantCommandTiles, ...spotifyPlaylistTiles];
+    const totalRegularPages = paginateEntities(allRegularItems, config.gridColumns || 2, config.gridRows || 2).length;
     const totalPages = totalRegularPages + (mediaPlayers.length > 0 ? 1 : 0);
     
     if (currentPage < totalPages - 1) {
@@ -2605,6 +2668,15 @@ function updateEntityFormForDomain() {
     document.getElementById('entityOptLight').style.display = domain === 'light' ? 'block' : 'none';
     document.getElementById('entityOptSensor').style.display = domain === 'sensor' ? 'flex' : 'none';
     document.getElementById('entityOptWeather').style.display = domain === 'weather' ? 'flex' : 'none';
+
+    // Inline forecast needs vertical room, so it's unavailable on half-height tiles
+    const isHalfHeight = document.getElementById('newEntityTileHeight').value === 'half';
+    const inlineForecastCheckbox = document.getElementById('newEntityShowInlineForecast');
+    inlineForecastCheckbox.disabled = isHalfHeight;
+    if (isHalfHeight) inlineForecastCheckbox.checked = false;
+    const inlineForecastLabel = inlineForecastCheckbox.closest('label');
+    inlineForecastLabel.style.opacity = isHalfHeight ? '0.4' : '1';
+    inlineForecastLabel.style.cursor = isHalfHeight ? 'default' : 'pointer';
 }
 
 function openEntityModal(index) {
@@ -2630,8 +2702,8 @@ function openEntityModal(index) {
         document.getElementById('newEntityHideWeatherName').checked = entity.hideWeatherName || false;
         document.getElementById('newEntityHideWeatherIcon').checked = entity.hideWeatherIcon || false;
         document.getElementById('newEntityHideWeatherForecast').checked = entity.hideWeatherForecast || false;
-        document.getElementById('newEntityWeatherFullRow').checked = entity.weatherFullRow || false;
         document.getElementById('newEntityShowInlineForecast').checked = entity.showInlineForecast || false;
+        document.getElementById('newEntityTileHeight').value = entity.tileHeight || 'normal';
     } else {
         document.getElementById('newEntityDomain').value = 'light';
         document.getElementById('newEntityId').value = '';
@@ -2646,9 +2718,22 @@ function openEntityModal(index) {
         document.getElementById('newEntityHideWeatherName').checked = false;
         document.getElementById('newEntityHideWeatherIcon').checked = false;
         document.getElementById('newEntityHideWeatherForecast').checked = false;
-        document.getElementById('newEntityWeatherFullRow').checked = false;
         document.getElementById('newEntityShowInlineForecast').checked = false;
+        document.getElementById('newEntityTileHeight').value = 'normal';
     }
+
+    // Populate width options based on current room column count
+    const gridCols = parseInt(document.getElementById('gridColumnsInput')?.value) || window.editingRoomData?.gridColumns || 2;
+    const tileWidthSelect = document.getElementById('newEntityTileWidth');
+    tileWidthSelect.innerHTML = '';
+    for (let c = 1; c <= gridCols; c++) {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c === 1 ? '1 col' : c === gridCols ? `${c} cols (full width)` : `${c} cols`;
+        tileWidthSelect.appendChild(opt);
+    }
+    const savedColSpan = (editingEntityIndex !== null && window.editingRoomData?.entities[editingEntityIndex]?.tileColSpan) || 1;
+    tileWidthSelect.value = Math.min(savedColSpan, gridCols);
 
     updateEntityFormForDomain();
     document.getElementById('entityEditorModal').classList.add('active');
@@ -2692,9 +2777,14 @@ function saveEntityModal() {
         if (document.getElementById('newEntityHideWeatherName').checked) entity.hideWeatherName = true;
         if (document.getElementById('newEntityHideWeatherIcon').checked) entity.hideWeatherIcon = true;
         if (document.getElementById('newEntityHideWeatherForecast').checked) entity.hideWeatherForecast = true;
-        if (document.getElementById('newEntityWeatherFullRow').checked) entity.weatherFullRow = true;
         if (document.getElementById('newEntityShowInlineForecast').checked) entity.showInlineForecast = true;
     }
+
+    const tileColSpan = parseInt(document.getElementById('newEntityTileWidth').value);
+    const tileHeight = document.getElementById('newEntityTileHeight').value;
+    if (tileColSpan && tileColSpan > 1) entity.tileColSpan = tileColSpan;
+    if (tileHeight && tileHeight !== 'normal') entity.tileHeight = tileHeight;
+    if (tileHeight === 'half') delete entity.showInlineForecast;
 
     if (editingEntityIndex !== null) {
         window.editingRoomData.entities.splice(editingEntityIndex, 1, entity);

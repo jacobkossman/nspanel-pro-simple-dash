@@ -13,6 +13,7 @@
     --tile-radius:      16px;
     --tile-padding:     16px;
     --tile-icon-size:   28px;
+    --tile-icon-size--half-height: 24px;
     --tile-label-size:  14px;
     --tile-state-size:  10px;
 
@@ -308,6 +309,7 @@ body {
 .grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: 1fr;
     gap: 10px;
     height: 100%;
 }
@@ -332,7 +334,8 @@ body {
     position: relative;
     overflow: hidden;
     backdrop-filter: blur(10px);
-    min-height: 100px;
+    min-height: 0;
+    grid-row: span 2;
 }
 
 .tile::before {
@@ -457,6 +460,10 @@ body {
     width: 100%;
 }
 
+.tile.weather.tile-half-height .weather-forecast-strip {
+    display: none;
+}
+
 .tile.weather.full-row .weather-forecast-strip {
     margin-top: 0;
     flex-direction: column;
@@ -498,7 +505,6 @@ body {
 }
 
 .tile.weather.full-row {
-    grid-column: 1 / -1;
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
@@ -716,7 +722,7 @@ body {
 }
 
 .climate-mode {
-    font-size: 9px;
+    font-size: var(--tile-state-size);
     font-weight: 300;
     opacity: 0.5;
     text-transform: uppercase;
@@ -849,6 +855,27 @@ body {
 
 .tile.no-action:active::before {
     opacity: 0;
+}
+
+.tile.tile-half-height {
+    grid-row: span 1;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.tile.tile-half-height .tile-icon {
+    margin-bottom: 0;
+    font-size: var(--tile-icon-size--half-height);
+}
+
+.tile.tile-half-height .tile-content {
+    margin-left: 16px;
+    flex-grow: 1;
+}
+
+.tile.tile-half-height.climate {
+    justify-content: space-between;
 }
 
 .tile.assistant-command {

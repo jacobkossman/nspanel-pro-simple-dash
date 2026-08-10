@@ -238,13 +238,27 @@
                             <span style="font-size: 13px; color: #888;">Disable forecast popup</span>
                         </label>
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                            <input type="checkbox" id="newEntityWeatherFullRow" aria-label="Full row layout" style="width: 18px; height: 18px; cursor: pointer;">
-                            <span style="font-size: 13px; color: #888;">Full row (icon left, content right)</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                             <input type="checkbox" id="newEntityShowInlineForecast" aria-label="Show forecast on tile" style="width: 18px; height: 18px; cursor: pointer;">
                             <span style="font-size: 13px; color: #888;">Show forecast on tile</span>
                         </label>
+                    </div>
+                    <div id="entityOptSize">
+                        <label class="form-label" style="font-size: 11px; margin-bottom: 6px; display: block;">Tile Size</label>
+                        <div style="display: flex; gap: 12px;">
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                                <label class="form-label" style="font-size: 10px;">Width</label>
+                                <select class="form-input" id="newEntityTileWidth" style="padding: 6px 8px;">
+                                    <!-- populated dynamically based on room column count -->
+                                </select>
+                            </div>
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                                <label class="form-label" style="font-size: 10px;">Height</label>
+                                <select class="form-input" id="newEntityTileHeight" style="padding: 6px 8px;" onchange="updateEntityFormForDomain()">
+                                    <option value="normal">Normal</option>
+                                    <option value="half">Half row</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                     <button class="save-btn" onclick="saveEntityModal()">Save Entity</button>
                 </div>
