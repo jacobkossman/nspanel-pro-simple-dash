@@ -92,6 +92,47 @@
         </div>
     </div>
 
+    <!-- Alarm Control Modal -->
+    <div class="climate-modal" id="alarmModal" onclick="closeAlarmModal(event)">
+        <div class="climate-modal-content" onclick="event.stopPropagation()">
+            <div class="climate-modal-header">
+                <div class="climate-modal-title" id="alarmModalTitle">Alarm</div>
+                <button class="climate-modal-close" onclick="closeAlarmModal()">close</button>
+            </div>
+            <div class="climate-modal-body">
+                <div class="alarm-status" id="alarmStatus">
+                    <div class="alarm-status-icon" id="alarmStatusIcon">security</div>
+                    <div class="alarm-status-text" id="alarmStatusText">Unknown</div>
+                </div>
+                <div class="climate-mode-selector" id="alarmModeSelector">
+                    <!-- Arm/disarm buttons will be generated here -->
+                </div>
+                <div class="alarm-code-entry" id="alarmCodeEntry">
+                    <div class="alarm-code-display" id="alarmCodeDisplay">Enter code</div>
+                    <input type="password" inputmode="text" class="form-input alarm-code-text-input" id="alarmCodeTextInput" placeholder="Enter code" aria-label="Alarm code" style="display: none;">
+                    <div class="alarm-code-keypad" id="alarmCodeKeypad">
+                        <button class="alarm-code-key" onclick="pressAlarmCodeDigit('1')">1</button>
+                        <button class="alarm-code-key" onclick="pressAlarmCodeDigit('2')">2</button>
+                        <button class="alarm-code-key" onclick="pressAlarmCodeDigit('3')">3</button>
+                        <button class="alarm-code-key" onclick="pressAlarmCodeDigit('4')">4</button>
+                        <button class="alarm-code-key" onclick="pressAlarmCodeDigit('5')">5</button>
+                        <button class="alarm-code-key" onclick="pressAlarmCodeDigit('6')">6</button>
+                        <button class="alarm-code-key" onclick="pressAlarmCodeDigit('7')">7</button>
+                        <button class="alarm-code-key" onclick="pressAlarmCodeDigit('8')">8</button>
+                        <button class="alarm-code-key" onclick="pressAlarmCodeDigit('9')">9</button>
+                        <button class="alarm-code-key" onclick="clearAlarmCode()" aria-label="Clear code">C</button>
+                        <button class="alarm-code-key" onclick="pressAlarmCodeDigit('0')">0</button>
+                        <button class="alarm-code-key" onclick="backspaceAlarmCode()" aria-label="Backspace">⌫</button>
+                    </div>
+                    <div class="alarm-code-actions">
+                        <button class="remove-btn" onclick="cancelAlarmCodeEntry()">Cancel</button>
+                        <button class="save-btn" onclick="submitAlarmCode()">Submit</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Weather Forecast Modal -->
     <div class="climate-modal" id="weatherModal" onclick="closeWeatherModal(event)">
         <div class="climate-modal-content" onclick="event.stopPropagation()">
@@ -171,6 +212,7 @@
                                 <option value="media_player">media_player</option>
                                 <option value="cover">cover</option>
                                 <option value="lock">lock</option>
+                                <option value="alarm_control_panel">alarm_control_panel</option>
                                 <option value="fan">fan</option>
                                 <option value="group">group</option>
                                 <option value="input_boolean">input_boolean</option>

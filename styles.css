@@ -422,6 +422,47 @@ body {
     color: #ef5350;
 }
 
+.tile.alarm_control_panel .tile-icon,
+.tile.alarm_control_panel .tile-state {
+    color: #4caf50;
+}
+
+.tile.alarm_control_panel.armed {
+    background: linear-gradient(135deg, rgba(66, 165, 245, 0.15) 0%, rgba(33, 150, 243, 0.05) 100%);
+    border-color: rgba(66, 165, 245, 0.3);
+}
+
+.tile.alarm_control_panel.armed .tile-icon,
+.tile.alarm_control_panel.armed .tile-state {
+    color: #42a5f5;
+}
+
+.tile.alarm_control_panel.pending {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.15) 0%, rgba(255, 193, 7, 0.05) 100%);
+    border-color: rgba(255, 193, 7, 0.3);
+}
+
+.tile.alarm_control_panel.pending .tile-icon,
+.tile.alarm_control_panel.pending .tile-state {
+    color: #ffc107;
+}
+
+.tile.alarm_control_panel.triggered {
+    background: linear-gradient(135deg, rgba(239, 83, 80, 0.25) 0%, rgba(239, 83, 80, 0.1) 100%);
+    border-color: rgba(239, 83, 80, 0.5);
+    animation: alarm-tile-pulse 1s ease-in-out infinite;
+}
+
+.tile.alarm_control_panel.triggered .tile-icon,
+.tile.alarm_control_panel.triggered .tile-state {
+    color: #ef5350;
+}
+
+@keyframes alarm-tile-pulse {
+    0%, 100% { box-shadow: 0 8px 24px rgba(239, 83, 80, 0.2); }
+    50% { box-shadow: 0 8px 24px rgba(239, 83, 80, 0.55); }
+}
+
 .tile.sensor {
     background: var(--tile-sensor-bg);
     border-color: rgba(156, 39, 176, 0.3);
@@ -1632,6 +1673,106 @@ body {
 
 .climate-mode-btn:active {
     transform: scale(0.96);
+}
+
+/* Alarm Control Modal */
+.alarm-status {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.alarm-status-icon {
+    font-family: 'Material Symbols Outlined';
+    font-size: 44px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 8px;
+}
+
+.alarm-status-text {
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.alarm-status.disarmed .alarm-status-icon,
+.alarm-status.disarmed .alarm-status-text {
+    color: #4caf50;
+}
+
+.alarm-status.armed .alarm-status-icon,
+.alarm-status.armed .alarm-status-text {
+    color: #42a5f5;
+}
+
+.alarm-status.pending .alarm-status-icon,
+.alarm-status.pending .alarm-status-text {
+    color: #ffc107;
+}
+
+.alarm-status.triggered .alarm-status-icon,
+.alarm-status.triggered .alarm-status-text {
+    color: #ef5350;
+}
+
+.alarm-code-entry {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.alarm-code-display {
+    font-size: 26px;
+    letter-spacing: 8px;
+    min-height: 32px;
+    color: rgba(255, 255, 255, 0.85);
+    text-align: center;
+}
+
+.alarm-code-text-input {
+    text-align: center;
+    letter-spacing: 4px;
+}
+
+.alarm-code-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 100%;
+}
+
+.alarm-code-key {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.alarm-code-key:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.alarm-code-key:active {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(0.94);
+}
+
+.alarm-code-actions {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.alarm-code-actions button {
+    flex: 1;
+    width: auto;
+    margin-top: 0;
 }
 
 /* Weather Forecast Modal */

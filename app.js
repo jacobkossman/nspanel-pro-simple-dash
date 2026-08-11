@@ -153,6 +153,36 @@ function formatWeatherCondition(state) {
         .replace(/\b\w/g, c => c.toUpperCase());
 }
 
+const ALARM_STATE_LABELS = {
+    armed_home: 'Armed Home',
+    armed_away: 'Armed Away',
+    armed_night: 'Armed Night',
+    armed_vacation: 'Armed Vacation',
+    armed_custom_bypass: 'Armed Custom',
+    pending: 'Pending',
+    arming: 'Arming',
+    disarming: 'Disarming',
+    triggered: 'Triggered',
+    disarmed: 'Disarmed'
+};
+
+// Format a Home Assistant alarm_control_panel state for display (e.g. "armed_night" -> "Armed Night")
+function formatAlarmState(state) {
+    if (!state) return 'Unknown';
+    return ALARM_STATE_LABELS[state] || state
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// Buckets a raw alarm_control_panel state into a coarse category used for tile/modal coloring
+function alarmStateCategory(state) {
+    if (state === 'triggered') return 'triggered';
+    if (state === 'disarmed') return 'disarmed';
+    if (state === 'pending' || state === 'arming' || state === 'disarming') return 'pending';
+    if (state && state.startsWith('armed')) return 'armed';
+    return '';
+}
+
 async function loadConfig() {
     try {
         // Get device-specific identifier (use IP or generate unique ID)
@@ -966,6 +996,8 @@ function createTile(entity, state) {
         return createWeatherTile(entity, state);
     } else if (domain === 'cover') {
         return createCoverTile(entity, state);
+    } else if (domain === 'alarm_control_panel') {
+        return createAlarmTile(entity, state);
     }
 
     const stateValue = state ? state.state : null;
@@ -1489,7 +1521,8 @@ function getEntityIcon(domain, entityId) {
         'group': 'workspaces',
         'input_boolean': 'toggle_on',
         'automation': 'settings_suggest',
-        'weather': 'partly_cloudy_day'
+        'weather': 'partly_cloudy_day',
+        'alarm_control_panel': 'security'
     };
 
     return iconMap[domain] || 'toggle_on';
@@ -1580,6 +1613,51 @@ function createSensorTile(entity, state) {
 
     tile.appendChild(label);
     tile.appendChild(tempDisplay);
+
+    return tile;
+}
+
+function createAlarmTile(entity, state) {
+    const tile = document.createElement('div');
+    tile.className = 'tile alarm_control_panel';
+
+    const stateValue = state ? state.state : null;
+    const isUnavailable = !state || stateValue === 'unavailable';
+    const category = alarmStateCategory(stateValue);
+
+    if (category) tile.classList.add(category);
+
+    if (isUnavailable) {
+        tile.classList.add('unavailable');
+    } else if (entity.disableAction) {
+        tile.classList.add('no-action');
+    }
+
+    const icon = document.createElement('div');
+    icon.className = 'tile-icon';
+    icon.textContent = entity.icon || getEntityIcon('alarm_control_panel', entity.id);
+
+    const content = document.createElement('div');
+    content.className = 'tile-content';
+
+    const label = document.createElement('div');
+    label.className = 'tile-label';
+    label.textContent = entity.label;
+    content.appendChild(label);
+
+    if (!entity.hideState) {
+        const stateText = document.createElement('div');
+        stateText.className = 'tile-state';
+        stateText.textContent = formatAlarmState(stateValue).toUpperCase();
+        content.appendChild(stateText);
+    }
+
+    tile.appendChild(icon);
+    tile.appendChild(content);
+
+    if (!isUnavailable && !entity.disableAction) {
+        tile.onclick = () => openAlarmModal(entity.id);
+    }
 
     return tile;
 }
@@ -3260,6 +3338,192 @@ async function setClimateMode(entityId, mode) {
     } catch (error) {
         console.error('Failed to set climate mode:', error);
         showError('Failed to set mode');
+    }
+}
+
+// ============================================
+// ALARM CONTROL MODAL
+// ============================================
+let currentAlarmEntity = null;
+let alarmPendingAction = null; // { entityId, service } while the code-entry screen is showing
+let alarmCodeBuffer = '';
+
+// alarm_control_panel supported_features bitmask (Home Assistant const.py)
+const ALARM_ARM_ACTIONS = [
+    { mode: 'armed_home', service: 'alarm_arm_home', label: 'Arm Home', bit: 1 },
+    { mode: 'armed_away', service: 'alarm_arm_away', label: 'Arm Away', bit: 2 },
+    { mode: 'armed_night', service: 'alarm_arm_night', label: 'Arm Night', bit: 4 },
+    { mode: 'armed_custom_bypass', service: 'alarm_arm_custom_bypass', label: 'Custom Bypass', bit: 16 },
+    { mode: 'armed_vacation', service: 'alarm_arm_vacation', label: 'Arm Vacation', bit: 32 }
+];
+
+const ALARM_STATUS_ICONS = {
+    disarmed: 'lock_open',
+    armed: 'lock',
+    pending: 'hourglass_top',
+    triggered: 'crisis_alert'
+};
+
+function openAlarmModal(entityId) {
+    currentAlarmEntity = entityId;
+    const state = entityStates[entityId];
+    if (!state) return;
+
+    const modal = document.getElementById('alarmModal');
+    const entity = config.entities.find(e => e.id === entityId);
+
+    document.getElementById('alarmModalTitle').textContent = entity ? entity.label : 'Alarm';
+
+    hideAlarmCodeEntry();
+    renderAlarmStatus(state);
+    renderAlarmModeSelector(entityId, state);
+
+    modal.classList.add('active');
+}
+
+function closeAlarmModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    document.getElementById('alarmModal').classList.remove('active');
+    currentAlarmEntity = null;
+    hideAlarmCodeEntry();
+}
+
+function renderAlarmStatus(state) {
+    const category = alarmStateCategory(state.state);
+    document.getElementById('alarmStatus').className = 'alarm-status' + (category ? ` ${category}` : '');
+    document.getElementById('alarmStatusText').textContent = formatAlarmState(state.state);
+    document.getElementById('alarmStatusIcon').textContent = ALARM_STATUS_ICONS[category] || 'security';
+}
+
+function renderAlarmModeSelector(entityId, state) {
+    const selector = document.getElementById('alarmModeSelector');
+    selector.innerHTML = '';
+
+    const supported = state.attributes.supported_features || 0;
+    const currentMode = state.state;
+
+    const disarmBtn = document.createElement('button');
+    disarmBtn.className = 'climate-mode-btn';
+    disarmBtn.textContent = 'Disarm';
+    if (currentMode === 'disarmed') disarmBtn.classList.add('active');
+    disarmBtn.onclick = () => requestAlarmAction(entityId, 'alarm_disarm', false);
+    selector.appendChild(disarmBtn);
+
+    ALARM_ARM_ACTIONS.forEach(action => {
+        if (!(supported & action.bit)) return;
+        const btn = document.createElement('button');
+        btn.className = 'climate-mode-btn';
+        btn.textContent = action.label;
+        if (currentMode === action.mode) btn.classList.add('active');
+        btn.onclick = () => requestAlarmAction(entityId, action.service, true);
+        selector.appendChild(btn);
+    });
+}
+
+function requestAlarmAction(entityId, service, isArmAction) {
+    const state = entityStates[entityId];
+    const codeFormat = state?.attributes.code_format;
+    const codeRequired = codeFormat && (isArmAction ? state.attributes.code_arm_required !== false : true);
+
+    if (codeRequired) {
+        showAlarmCodeEntry(entityId, service, codeFormat);
+    } else {
+        setAlarmMode(entityId, service, null);
+    }
+}
+
+function showAlarmCodeEntry(entityId, service, codeFormat) {
+    alarmPendingAction = { entityId, service };
+    alarmCodeBuffer = '';
+
+    document.getElementById('alarmStatus').style.display = 'none';
+    document.getElementById('alarmModeSelector').style.display = 'none';
+    document.getElementById('alarmCodeEntry').style.display = 'flex';
+
+    const isText = codeFormat === 'text';
+    document.getElementById('alarmCodeKeypad').style.display = isText ? 'none' : 'grid';
+    document.getElementById('alarmCodeDisplay').style.display = isText ? 'none' : 'block';
+
+    const textInput = document.getElementById('alarmCodeTextInput');
+    textInput.style.display = isText ? 'block' : 'none';
+    textInput.value = '';
+
+    updateAlarmCodeDisplay();
+    if (isText) setTimeout(() => textInput.focus(), 50);
+}
+
+function hideAlarmCodeEntry() {
+    alarmPendingAction = null;
+    alarmCodeBuffer = '';
+    const codeEntry = document.getElementById('alarmCodeEntry');
+    if (!codeEntry) return;
+    codeEntry.style.display = 'none';
+    document.getElementById('alarmStatus').style.removeProperty('display');
+    document.getElementById('alarmModeSelector').style.removeProperty('display');
+}
+
+function updateAlarmCodeDisplay() {
+    document.getElementById('alarmCodeDisplay').textContent = alarmCodeBuffer ? '•'.repeat(alarmCodeBuffer.length) : 'Enter code';
+}
+
+function pressAlarmCodeDigit(digit) {
+    alarmCodeBuffer += digit;
+    updateAlarmCodeDisplay();
+}
+
+function backspaceAlarmCode() {
+    alarmCodeBuffer = alarmCodeBuffer.slice(0, -1);
+    updateAlarmCodeDisplay();
+}
+
+function clearAlarmCode() {
+    alarmCodeBuffer = '';
+    updateAlarmCodeDisplay();
+}
+
+function cancelAlarmCodeEntry() {
+    hideAlarmCodeEntry();
+}
+
+function submitAlarmCode() {
+    if (!alarmPendingAction) return;
+    const { entityId, service } = alarmPendingAction;
+    const codeFormat = entityStates[entityId]?.attributes.code_format;
+    const code = codeFormat === 'text'
+        ? document.getElementById('alarmCodeTextInput').value.trim()
+        : alarmCodeBuffer;
+
+    if (!code) {
+        showError('Please enter the code');
+        return;
+    }
+
+    setAlarmMode(entityId, service, code);
+}
+
+async function setAlarmMode(entityId, service, code) {
+    try {
+        const body = { entity_id: entityId };
+        if (code) body.code = code;
+        await callHA(`services/alarm_control_panel/${service}`, 'POST', body);
+
+        hideAlarmCodeEntry();
+
+        setTimeout(() => {
+            getStates().then(() => {
+                renderPages();
+                const state = entityStates[entityId];
+                if (currentAlarmEntity === entityId && state) {
+                    renderAlarmStatus(state);
+                    renderAlarmModeSelector(entityId, state);
+                }
+            });
+        }, 300);
+    } catch (error) {
+        console.error('Failed to set alarm mode:', error);
+        showError('Failed to change alarm mode — check the code and try again');
+        alarmCodeBuffer = '';
+        updateAlarmCodeDisplay();
     }
 }
 

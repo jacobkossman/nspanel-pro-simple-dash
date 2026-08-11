@@ -105,6 +105,7 @@ Leaving the room editor with unsaved changes prompts a confirmation before disca
 | `light` | Toggle; swipe up/down on the tile to adjust brightness (unless dimming is disabled) |
 | `switch`, `input_boolean`, `group`, `fan` | Toggle |
 | `lock` | Toggle lock/unlock; red when locked, green when unlocked |
+| `alarm_control_panel` | Shows current state (disarmed/armed/pending/triggered); tap opens a modal with arm/disarm mode buttons and an on-screen code entry if the entity requires one |
 | `cover` | Toggle; swipe to set position if the entity supports it |
 | `climate` | Opens a modal with current/target temperature and HVAC mode buttons |
 | `scene`, `script`, `automation` | Trigger/activate |
