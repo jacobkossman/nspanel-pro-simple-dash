@@ -1008,6 +1008,9 @@ function createTile(entity, state) {
     if (isOn) {
         tile.classList.add('on');
     }
+    if (domain === 'lock' && stateValue) {
+        tile.classList.add(`state--${stateValue}`);
+    }
 
     if (isUnavailable) {
         tile.classList.add('unavailable');
